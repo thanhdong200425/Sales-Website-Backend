@@ -3,7 +3,6 @@ import express, { Request, Response } from "express";
 import { Pool } from "pg";
 import cors from "cors";
 import { prisma } from "./prisma/prisma.js";
-import { ProductStatus } from "@prisma/client";
 
 dotenv.config();
 
@@ -65,7 +64,7 @@ app.get("/api/products", async (_req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany({
       where: {
-        status: "PUBLISHED",
+        status: "published",
         inStock: true,
       },
       include: {
@@ -97,7 +96,7 @@ app.get("/api/products/featured", async (_req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany({
       where: {
-        status: "PUBLISHED",
+        status: "published",
         featured: true,
         inStock: true,
       },

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient, ProductStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const adapter = new PrismaPg({
   connectionString: `${process.env.DATABASE_URL}`,
@@ -120,7 +120,7 @@ async function main() {
           currency,
           inStock: Math.random() > 0.1,
           featured: Math.random() > 0.7,
-          status: "published" as ProductStatus,
+          status: "published",
           categoryId: category.id,
           images: {
             create: buildImages(index),

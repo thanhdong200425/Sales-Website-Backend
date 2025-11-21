@@ -22,7 +22,7 @@ model Product {
   currency    String          @default("USD")
   inStock     Boolean         @default(true) @map("in_stock")
   featured    Boolean         @default(false)
-  status      ProductStatus   @default(DRAFT)
+  status      String          @default("DRAFT")
   category    ProductCategory @relation(fields: [categoryId], references: [id])
   categoryId  Int             @map("category_id")
   images      ProductImage[]
@@ -53,10 +53,4 @@ model ProductImage {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("product_images")
-}
-
-enum ProductStatus {
-  DRAFT     @map("draft")
-  PUBLISHED @map("published")
-  ARCHIVED  @map("archived")
 }
