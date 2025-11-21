@@ -1,6 +1,6 @@
-require('dotenv').config();
-const express = require('express');
-const { Pool } = require('pg');
+require("dotenv").config();
+const express = require("express");
+const { Pool } = require("pg");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -19,32 +19,32 @@ const pool = new Pool({
 });
 
 // Test database connection
-pool.query('SELECT NOW()', (err, res) => {
+pool.query("SELECT NOW()", (err, res) => {
   if (err) {
-    console.error('Error connecting to the database:', err);
+    console.error("Error connecting to the database:", err);
   } else {
-    console.log('Database connected successfully at:', res.rows[0].now);
+    console.log("Database connected successfully at:", res.rows[0].now);
   }
 });
 
 // Routes
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to Express.js with PostgreSQL!' });
+app.get("/", (req, res) => {
+  res.json({ message: "Welcome to Express.js with PostgreSQL!" });
 });
 
-app.get('/health', async (req, res) => {
+app.get("/health", async (req, res) => {
   try {
-    const result = await pool.query('SELECT NOW()');
+    const result = await pool.query("SELECT NOW()");
     res.json({
-      status: 'healthy',
-      database: 'connected',
-      timestamp: result.rows[0].now
+      status: "healthy",
+      database: "connected",
+      timestamp: result.rows[0].now,
     });
   } catch (error) {
     res.status(500).json({
-      status: 'unhealthy',
-      database: 'disconnected',
-      error: error.message
+      status: "unhealthy",
+      database: "disconnected",
+      error: error.message,
     });
   }
 });
@@ -55,9 +55,9 @@ app.listen(port, () => {
 });
 
 // Graceful shutdown
-process.on('SIGINT', () => {
+process.on("SIGINT", () => {
   pool.end(() => {
-    console.log('Database pool closed');
+    console.log("Database pool closed");
     process.exit(0);
   });
 });
