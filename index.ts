@@ -43,7 +43,8 @@ app.get("/health", async (req: Request, res: Response) => {
       timestamp: result.rows[0].now,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     res.status(500).json({
       status: "unhealthy",
       database: "disconnected",
@@ -51,6 +52,9 @@ app.get("/health", async (req: Request, res: Response) => {
     });
   }
 });
+
+// DONE: Add a seed data for products
+// TODO: Add a route to get all products
 
 // Start server
 app.listen(port, () => {
@@ -64,4 +68,3 @@ process.on("SIGINT", () => {
     process.exit(0);
   });
 });
-

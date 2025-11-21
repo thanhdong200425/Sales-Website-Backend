@@ -18,8 +18,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "ignoreDeprecations": "6.0",
-    "noFallthroughCasesInSwitch": true,
+    "ignoreDeprecations": "5.0",
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist"]
