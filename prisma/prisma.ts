@@ -1,11 +1,11 @@
 import "dotenv/config";
-import { PrismaPg } from '@prisma/adapter-pg'
-// @ts-ignore - generated client requires explicit .ts extension under ESM
-import { PrismaClient } from '../generated/prisma/client.ts'
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@prisma/client";
 
-const connectionString = `${process.env.DATABASE_URL}`
+const connectionString = process.env.DATABASE_URL || 
+  `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
 
-const adapter = new PrismaPg({ connectionString })
-const prisma = new PrismaClient({ adapter })
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
 
-export { prisma }
+export { prisma };
