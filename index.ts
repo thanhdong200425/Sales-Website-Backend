@@ -124,6 +124,47 @@ app.get("/api/products/featured", async (_req: Request, res: Response) => {
     });
   }
 });
+// Get detail product by name
+app.get('/api/products/:slug', async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params;
+
+    const product = await prisma.product.findUnique({
+      where: {
+        slug: slug,
+      },
+      include: {
+        category: true,
+        images: {
+         
+          orderBy: {
+            position: 'asc', 
+          },
+        },
+      },
+    });
+
+ 
+    if (!product) {
+      res.status(404).json({ error: 'Product not found' });
+      return;
+    }
+
+    
+    if (product.status !== 'published') {
+      res.status(404).json({ error: 'Product is not available' });
+      return;
+    }
+
+    res.json(product);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({
+      error: 'Failed to fetch product detail',
+      message: errorMessage,
+    });
+  }
+});
 
 // Start server
 app.listen(port, () => {
