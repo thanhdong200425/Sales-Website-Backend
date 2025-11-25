@@ -5,12 +5,13 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
+  url      = "postgresql://postgres:123456@127.0.0.1:5432/mydb?schema=public"
 }
 
 model User {
@@ -27,4 +28,42 @@ model Post {
   published Boolean @default(false)
   author    User    @relation(fields: [authorId], references: [id])
   authorId  Int
+}
+
+model Product {
+  id          Int            @id @default(autoincrement())
+  name        String
+  slug        String         @unique
+  summary     String?        // Thêm trường này cho khớp ApiProduct
+  description String?
+  price       Decimal        @db.Decimal(10, 2)
+  currency    String         @default("USD") // Thêm trường này
+  
+  inStock     Boolean        @default(true)
+  featured    Boolean        @default(false) // Thêm trường này cho fetchFeaturedProducts
+  status      String         @default("published")
+  color       String?        
+  size        String?       
+  categoryId  Int?
+  category    Category?      @relation(fields: [categoryId], references: [id])
+  images      ProductImage[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  slug      String    @unique
+  products  Product[] // Quan hệ: Một danh mục có nhiều sản phẩm
+  createdAt DateTime  @default(now())
+}
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  url       String
+  altText   String? // Thêm trường này cho khớp ApiProduct
+  position  Int     @default(0)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
 }

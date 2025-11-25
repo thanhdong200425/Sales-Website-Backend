@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
 import { Pool } from "pg";
+import cors from "cors";
+import { prisma } from "./prisma/prisma.js";
 
 dotenv.config();
 
@@ -8,6 +10,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -49,6 +52,116 @@ app.get("/health", async (req: Request, res: Response) => {
       database: "disconnected",
       error: errorMessage,
     });
+  }
+});
+
+
+// Get all products
+app.get("/api/products", async (req: Request, res: Response) => {
+  try {
+    const { style, minPrice, maxPrice, color, size, type, page, limit } = req.query;
+
+    console.log("Incoming Filters", req.query);
+
+
+    // Set Pagination
+    const pageNumber = parseInt(page as string) || 1;
+    const pageSize = parseInt(limit as string) || 9; // Mặc định 9 sản phẩm/trang (cho đẹp grid 3x3)
+    const skip = (pageNumber - 1) * pageSize;
+
+    const whereClause: any = {
+      status: "published",
+      inStock: true,
+    };
+
+    if (type) {
+      const searchKeyword = (type as string).replace(/s$/, ""); // Bỏ chữ 's' số nhiều nếu có
+
+      whereClause.name = {
+        contains: searchKeyword,
+        mode: 'insensitive'
+      };
+    }
+
+    if (style) {
+      whereClause.category = {
+        name: { equals: style as string, mode: 'insensitive' }
+      };
+    }
+
+
+    if (minPrice || maxPrice) {
+      whereClause.price = {};
+      if (minPrice) {
+        whereClause.price.gte = parseFloat(minPrice as string);
+      }
+      if (maxPrice) {
+        whereClause.price.lte = parseFloat(maxPrice as string);
+      }
+    }
+    if (color) {
+      whereClause.color = { equals: color as string, mode: 'insensitive' };
+    }
+    if (size) {
+      whereClause.size = { equals: size as string, mode: 'insensitive' };
+    }
+    // console.log("Prisma Where Clause:", JSON.stringify(whereClause, null, 2));
+
+    // Quẻy Database
+    const [total, products] = await prisma.$transaction([
+      prisma.product.count({ where: whereClause }), 
+      prisma.product.findMany({
+        where: whereClause,
+        include: {
+          category: true,
+          images: { orderBy: { position: "asc" } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: skip,   
+        take: pageSize, 
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
+
+    // Transform Data
+    const data = products.map(p => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      summary: p.summary || "",
+      description: p.description || "",
+      price: p.price ? p.price.toString() : "0",
+      currency: p.currency || "USD",
+      inStock: p.inStock,
+      featured: p.featured,
+      status: p.status,
+      category: p.category ? {
+        id: p.category.id,
+        name: p.category.name,
+        slug: p.category.slug,
+      } : null,
+      images: (p.images || []).map(img => ({
+        id: img.id,
+        url: img.url,
+        altText: img.altText || "",
+        position: img.position
+      })),
+    }));
+
+    res.json({
+      data,
+      pagination: {
+        total,
+        page: pageNumber,
+        limit: pageSize,
+        totalPages,
+      }
+    });
+
+  } catch (error) {
+    console.error(" API Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 

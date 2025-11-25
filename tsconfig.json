@@ -21,7 +21,7 @@
     "ignoreDeprecations": "6.0",
     "noFallthroughCasesInSwitch": true,
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "_prisma.config.ts_old"],
   "exclude": ["node_modules", "dist"]
 }
 
