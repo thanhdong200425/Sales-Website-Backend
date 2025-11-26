@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import * as bcrypt from "bcryptjs";
 
 const adapter = new PrismaPg({
   connectionString: `${process.env.DATABASE_URL}`,
@@ -143,3 +144,24 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
+  async function seedUser() {
+  console.info("Seeding admin user...");
+
+  const exists = await prisma.user.findUnique({
+    where: { email: "admin@example.com" },
+  });
+
+  if (!exists) {
+    await prisma.user.create({
+      data: {
+        email: "admin@example.com",
+        password: await bcrypt.hash("123456", 10),
+        name: "Admin",
+      },
+    });
+    console.info("Admin created.");
+  } else {
+    console.info("Admin already exists, skipping...");
+  }
+}
