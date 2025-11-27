@@ -33,11 +33,11 @@ pool.query("SELECT NOW()", (err, res) => {
 });
 
 // Routes
-app.get("/", (req: Request, res: Response) => {
+app.get("/", (_req: Request, res: Response) => {
   res.json({ message: "Welcome to Express.js with PostgreSQL!" });
 });
 
-app.get("/health", async (req: Request, res: Response) => {
+app.get("/health", async (_req: Request, res: Response) => {
   try {
     const result = await pool.query("SELECT NOW()");
     res.json({
@@ -46,7 +46,8 @@ app.get("/health", async (req: Request, res: Response) => {
       timestamp: result.rows[0].now,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     res.status(500).json({
       status: "unhealthy",
       database: "disconnected",
@@ -162,6 +163,113 @@ app.get("/api/products", async (req: Request, res: Response) => {
   } catch (error) {
     console.error(" API Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
+// DONE: Add a seed data for products
+// DONE: Add a route to get all products
+
+// Get all products
+app.get("/api/products", async (_req: Request, res: Response) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        status: "published",
+        inStock: true,
+      },
+      include: {
+        category: true,
+        images: {
+          orderBy: {
+            position: "asc",
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    res.json(products);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    res.status(500).json({
+      error: "Failed to fetch products",
+      message: errorMessage,
+    });
+  }
+});
+
+// Get featured products
+app.get("/api/products/featured", async (_req: Request, res: Response) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        status: "published",
+        featured: true,
+        inStock: true,
+      },
+      include: {
+        category: true,
+        images: {
+          orderBy: {
+            position: "asc",
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 8,
+    });
+
+    res.json(products);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    res.status(500).json({
+      error: "Failed to fetch featured products",
+      message: errorMessage,
+    });
+  }
+});
+// Get detail product by name
+app.get('/api/products/:slug', async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params;
+
+    const product = await prisma.product.findUnique({
+      where: {
+        slug: slug,
+      },
+      include: {
+        category: true,
+        images: {
+         
+          orderBy: {
+            position: 'asc', 
+          },
+        },
+      },
+    });
+
+ 
+    if (!product) {
+      res.status(404).json({ error: 'Product not found' });
+      return;
+    }
+
+    
+    if (product.status !== 'published') {
+      res.status(404).json({ error: 'Product is not available' });
+      return;
+    }
+
+    res.json(product);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({
+      error: 'Failed to fetch product detail',
+      message: errorMessage,
+    });
   }
 });
 
@@ -177,4 +285,3 @@ process.on("SIGINT", () => {
     process.exit(0);
   });
 });
-

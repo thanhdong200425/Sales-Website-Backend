@@ -8,6 +8,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch index.ts"
+    "dev": "node --loader ts-node/esm index.ts",
+    "dev:watch": "nodemon --exec node --loader ts-node/esm index.ts",
+    "seed": "node --loader ts-node/esm prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -15,14 +18,20 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^5.22.0",
+    "@prisma/client": "^7.0.0",
+    "@types/cors": "^2.8.19",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
+    "@types/bcryptjs": "^2.4.6",
     "@types/express": "^5.0.5",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.10.1",
     "@types/pg": "^8.15.6",
     "nodemon": "^3.1.4",
