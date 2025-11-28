@@ -17,6 +17,20 @@ CREATE TABLE "Post" (
 
     CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
 );
+CREATE TABLE "Product" (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    rating FLOAT DEFAULT 0,
+    price FLOAT NOT NULL,
+    "originalPrice" FLOAT,
+    discount FLOAT,
+    image TEXT NOT NULL,
+    category VARCHAR(100),
+    style VARCHAR(100),
+    colors TEXT[],
+    sizes TEXT[],
+    "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");

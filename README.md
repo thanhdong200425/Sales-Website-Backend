@@ -1,3 +1,12 @@
+<!-- PORT=3000
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=123456
+DB_NAME=mydb
+
+DATABASE_URL="postgresql://postgres:123456@127.0.0.1:5432/mydb?schema=public" -->
+
 # Express.js + PostgreSQL Backend
 
 A backend project using Express.js and PostgreSQL with Docker.
