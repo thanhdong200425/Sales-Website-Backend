@@ -163,8 +163,8 @@ app.get("/api/products", async (req: Request, res: Response) => {
   } catch (error) {
     console.error(" API Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
-// DONE: Add a seed data for products
-// DONE: Add a route to get all products
+  }
+});
 
 // Get all products
 app.get("/api/products", async (_req: Request, res: Response) => {
