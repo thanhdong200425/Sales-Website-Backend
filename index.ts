@@ -58,7 +58,7 @@ app.get("/health", async (_req: Request, res: Response) => {
 
 
 // Get all products
-app.get("/api/products", async (req: Request, res: Response) => {
+app.get("/api/items", async (req: Request, res: Response) => {
   try {
     const { style, minPrice, maxPrice, color, size, type, page, limit } = req.query;
 
