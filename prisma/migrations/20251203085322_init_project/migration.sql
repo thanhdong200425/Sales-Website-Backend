@@ -1,37 +1,3 @@
-/*
-  Warnings:
-
-  - The values [DRAFT,PUBLISHED,ARCHIVED] on the enum `ProductStatus` will be removed. If these variants are still used in the database, this will fail.
-  - You are about to drop the `Product` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `ProductCategory` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `ProductImage` table. If the table is not empty, all the data it contains will be lost.
-
-*/
--- AlterEnum
-BEGIN;
-CREATE TYPE "ProductStatus_new" AS ENUM ('draft', 'published', 'archived');
-ALTER TABLE "public"."Product" ALTER COLUMN "status" DROP DEFAULT;
-ALTER TABLE "public"."Product" ALTER COLUMN "status" TYPE "ProductStatus_new" USING ("status"::text::"ProductStatus_new");
-ALTER TYPE "ProductStatus" RENAME TO "ProductStatus_old";
-ALTER TYPE "ProductStatus_new" RENAME TO "ProductStatus";
-DROP TYPE "public"."ProductStatus_old";
-COMMIT;
-
--- DropForeignKey
-ALTER TABLE "Product" DROP CONSTRAINT "Product_categoryId_fkey";
-
--- DropForeignKey
-ALTER TABLE "ProductImage" DROP CONSTRAINT "ProductImage_productId_fkey";
-
--- DropTable
-DROP TABLE "Product";
-
--- DropTable
-DROP TABLE "ProductCategory";
-
--- DropTable
-DROP TABLE "ProductImage";
-
 -- CreateTable
 CREATE TABLE "products" (
     "id" SERIAL NOT NULL,
@@ -43,7 +9,7 @@ CREATE TABLE "products" (
     "currency" TEXT NOT NULL DEFAULT 'USD',
     "in_stock" BOOLEAN NOT NULL DEFAULT true,
     "featured" BOOLEAN NOT NULL DEFAULT false,
-    "status" "ProductStatus" NOT NULL DEFAULT 'draft',
+    "status" TEXT NOT NULL DEFAULT 'DRAFT',
     "category_id" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -74,11 +40,26 @@ CREATE TABLE "product_images" (
     CONSTRAINT "product_images_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "users" (
+    "id" SERIAL NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "name" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "products_slug_key" ON "products"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "product_categories_slug_key" ON "product_categories"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- AddForeignKey
 ALTER TABLE "products" ADD CONSTRAINT "products_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "product_categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

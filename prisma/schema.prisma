@@ -5,13 +5,12 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:123456@127.0.0.1:5432/mydb?schema=public"
+  url      = env("DATABASE_URL")
 }
 
 model Product {
@@ -60,7 +59,7 @@ model ProductImage {
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
-  password  String   
+  password  String
   name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
