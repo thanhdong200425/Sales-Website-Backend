@@ -20,6 +20,9 @@ model Product {
   summary     String?
   description String?
   price       Decimal         @db.Decimal(10, 2)
+  color       String?        
+  size        String?        
+  style       String?
   currency    String          @default("USD")
   inStock     Boolean         @default(true) @map("in_stock")
   featured    Boolean         @default(false)
@@ -27,6 +30,7 @@ model Product {
   category    ProductCategory @relation(fields: [categoryId], references: [id])
   categoryId  Int             @map("category_id")
   images      ProductImage[]
+  favoritedBy Favorite[]
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
@@ -61,8 +65,20 @@ model User {
   email     String   @unique
   password  String
   name      String?
+  favoritedBy Favorite[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+model Favorite {
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int      @map("user_id")
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  Int      @map("product_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  @@id([userId, productId])
+  @@map("favorites")
 }

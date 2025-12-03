@@ -85,9 +85,7 @@ app.get("/api/products", async (req: Request, res: Response) => {
     }
 
     if (style) {
-      whereClause.category = {
-        name: { equals: style as string, mode: 'insensitive' }
-      };
+      whereClause.style = { equals: style as string, mode: 'insensitive' };
     }
 
 
@@ -108,7 +106,7 @@ app.get("/api/products", async (req: Request, res: Response) => {
     }
     // console.log("Prisma Where Clause:", JSON.stringify(whereClause, null, 2));
 
-    // Quẻy Database
+    // Query Database
     const [total, products] = await prisma.$transaction([
       prisma.product.count({ where: whereClause }), 
       prisma.product.findMany({
@@ -137,6 +135,9 @@ app.get("/api/products", async (req: Request, res: Response) => {
       inStock: p.inStock,
       featured: p.featured,
       status: p.status,
+      color: p.color,
+      size: p.size,
+      style: p.style,
       category: p.category ? {
         id: p.category.id,
         name: p.category.name,
