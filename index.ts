@@ -3,6 +3,9 @@ import express, { Request, Response } from "express";
 import { Pool } from "pg";
 import cors from "cors";
 import { prisma } from "./prisma/prisma.js";
+import authRoutes from "./src/modules/auth/auth.routes.js";
+import wishlistRoutes from "./src/modules/wishlist/wishlist.routes.js";
+import orderRoutes from "./src/modules/orders/orders.routes.js";
 
 dotenv.config();
 
@@ -13,6 +16,11 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Feature routes
+app.use("/auth", authRoutes);
+app.use("/wishlist", wishlistRoutes);
+app.use("/api/orders", orderRoutes);
 
 // PostgreSQL connection pool
 const pool = new Pool({
@@ -108,7 +116,7 @@ app.get("/api/items", async (req: Request, res: Response) => {
 
     // Query Database
     const [total, products] = await prisma.$transaction([
-      prisma.product.count({ where: whereClause }), 
+      prisma.product.count({ where: whereClause }),
       prisma.product.findMany({
         where: whereClause,
         include: {
@@ -116,8 +124,8 @@ app.get("/api/items", async (req: Request, res: Response) => {
           images: { orderBy: { position: "asc" } },
         },
         orderBy: { createdAt: "desc" },
-        skip: skip,   
-        take: pageSize, 
+        skip: skip,
+        take: pageSize,
       }),
     ]);
 
@@ -244,21 +252,21 @@ app.get('/api/products/:slug', async (req: Request, res: Response) => {
       include: {
         category: true,
         images: {
-         
+
           orderBy: {
-            position: 'asc', 
+            position: 'asc',
           },
         },
       },
     });
 
- 
+
     if (!product) {
       res.status(404).json({ error: 'Product not found' });
       return;
     }
 
-    
+
     if (product.status !== 'published') {
       res.status(404).json({ error: 'Product is not available' });
       return;
