@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import authRoutes from "./modules/auth/auth.routes";
+import wishlistRoutes from "./modules/wishlist/wishlist.routes";
 import orderRoutes from "./modules/orders/orders.routes";
 import dotenv from "dotenv";
 
@@ -12,6 +13,7 @@ app.use(express.json());
 
 // Routes
 app.use("/auth", authRoutes);
+app.use("/wishlist", wishlistRoutes);
 app.use("/api/orders", orderRoutes);
 
 app.get("/", (req, res) => {
