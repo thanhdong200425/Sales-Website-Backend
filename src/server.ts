@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./modules/auth/auth.routes";
 import wishlistRoutes from "./modules/wishlist/wishlist.routes";
+import orderRoutes from "./modules/orders/orders.routes";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -13,10 +14,13 @@ app.use(express.json());
 // Routes
 app.use("/auth", authRoutes);
 app.use("/wishlist", wishlistRoutes);
+app.use("/api/orders", orderRoutes);
 
 app.get("/", (req, res) => {
   res.send("Sales Website Backend is running...");
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Server running on http://localhost:${PORT}`)
+);
