@@ -4,8 +4,8 @@ import { Pool } from 'pg';
 import cors from 'cors';
 import { prisma } from './prisma/prisma.js';
 import authRoutes from './src/modules/auth/auth.routes.js';
+import wishlistRoutes from './src/modules/wishlist/wishlist.routes.js';
 import userRoutes from './src/modules/user/user.routes.js';
-
 dotenv.config();
 
 const app = express();
@@ -58,7 +58,7 @@ app.get('/health', async (_req: Request, res: Response) => {
 });
 
 // Get all products
-app.get('/api/products', async (req: Request, res: Response) => {
+app.get('/api/items', async (req: Request, res: Response) => {
   try {
     const { style, minPrice, maxPrice, color, size, type, page, limit } = req.query;
 
@@ -84,9 +84,7 @@ app.get('/api/products', async (req: Request, res: Response) => {
     }
 
     if (style) {
-      whereClause.category = {
-        name: { equals: style as string, mode: 'insensitive' },
-      };
+      whereClause.style = { equals: style as string, mode: 'insensitive' };
     }
 
     if (minPrice || maxPrice) {
@@ -106,7 +104,7 @@ app.get('/api/products', async (req: Request, res: Response) => {
     }
     // console.log("Prisma Where Clause:", JSON.stringify(whereClause, null, 2));
 
-    // Quẻy Database
+    // Query Database
     const [total, products] = await prisma.$transaction([
       prisma.product.count({ where: whereClause }),
       prisma.product.findMany({
@@ -135,6 +133,9 @@ app.get('/api/products', async (req: Request, res: Response) => {
       inStock: p.inStock,
       featured: p.featured,
       status: p.status,
+      color: p.color,
+      size: p.size,
+      style: p.style,
       category: p.category
         ? {
             id: p.category.id,
@@ -268,9 +269,7 @@ app.get('/api/products/:slug', async (req: Request, res: Response) => {
 });
 
 app.use('/auth', authRoutes);
-app.get('/', (req, res) => {
-  res.send('Sales Website Backend is running...');
-});
+app.use('/wishlist', wishlistRoutes);
 app.use('/api/users', userRoutes);
 
 // Start server

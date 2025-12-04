@@ -1,8 +1,10 @@
-import express from 'express';
-import cors from 'cors';
-import authRoutes from './modules/auth/auth.routes';
-import userRoutes from './modules/user/user.routes';
-import dotenv from 'dotenv';
+import express from "express";
+import cors from "cors";
+import authRoutes from "./modules/auth/auth.routes";
+import wishlistRoutes from "./modules/wishlist/wishlist.routes";
+import orderRoutes from "./modules/orders/orders.routes";
+
+import dotenv from "dotenv";
 
 dotenv.config();
 const app = express();
@@ -14,10 +16,15 @@ app.use(express.json());
 console.log('Registering Auth Routes...');
 app.use('/auth', authRoutes);
 
+app.use("/wishlist", wishlistRoutes);
+app.use("/api/orders", orderRoutes);
+
 app.get('/', (req, res) => {
   res.send('Sales Website Backend is running...');
 });
-app.use('/users', userRoutes);
+
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Server running on http://localhost:${PORT}`)
+);

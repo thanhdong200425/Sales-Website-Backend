@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const prisma = new PrismaClient(); 
+const prisma = new PrismaClient();
 
 export const AuthService = {
   async register(email: string, pass: string, name?: string) {
@@ -27,15 +27,15 @@ export const AuthService = {
     // Loại bỏ mật khẩu trước khi trả về
     const { password, ...userWithoutPassword } = user;
 
-    return { 
-      message: "Đăng ký tài khoản thành công", 
-      user: userWithoutPassword 
+    return {
+      message: "Đăng ký tài khoản thành công",
+      user: userWithoutPassword,
     };
   },
 
   async login(email: string, pass: string) {
     const user = await prisma.user.findUnique({ where: { email } });
-    
+
     if (!user) {
       throw new Error("Email hoặc mật khẩu không chính xác");
     }
@@ -49,11 +49,11 @@ export const AuthService = {
     if (!secret) {
       throw new Error("Chưa cấu hình JWT_SECRET trong .env");
     }
-    
+
     const token = jwt.sign(
-      { userId: user.id, email: user.email, role: "user" }, 
+      { userId: user.id, email: user.email, role: "user" },
       secret,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
     );
 
     const { password, ...userWithoutPassword } = user;
@@ -63,5 +63,5 @@ export const AuthService = {
 
   async logout() {
     return { message: "Logged out successfully" };
-  }
+  },
 };
