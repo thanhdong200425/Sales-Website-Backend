@@ -1,8 +1,10 @@
-import dotenv from "dotenv";
-import express, { Request, Response } from "express";
-import { Pool } from "pg";
-import cors from "cors";
-import { prisma } from "./prisma/prisma.js";
+import dotenv from 'dotenv';
+import express, { Request, Response } from 'express';
+import { Pool } from 'pg';
+import cors from 'cors';
+import { prisma } from './prisma/prisma.js';
+import authRoutes from './src/modules/auth/auth.routes.js';
+import userRoutes from './src/modules/user/user.routes.js';
 
 dotenv.config();
 
@@ -24,46 +26,43 @@ const pool = new Pool({
 });
 
 // Test database connection
-pool.query("SELECT NOW()", (err, res) => {
+pool.query('SELECT NOW()', (err, res) => {
   if (err) {
-    console.error("Error connecting to the database:", err);
+    console.error('Error connecting to the database:', err);
   } else {
-    console.log("Database connected successfully at:", res.rows[0].now);
+    console.log('Database connected successfully at:', res.rows[0].now);
   }
 });
 
 // Routes
-app.get("/", (_req: Request, res: Response) => {
-  res.json({ message: "Welcome to Express.js with PostgreSQL!" });
+app.get('/', (_req: Request, res: Response) => {
+  res.json({ message: 'Welcome to Express.js with PostgreSQL!' });
 });
 
-app.get("/health", async (_req: Request, res: Response) => {
+app.get('/health', async (_req: Request, res: Response) => {
   try {
-    const result = await pool.query("SELECT NOW()");
+    const result = await pool.query('SELECT NOW()');
     res.json({
-      status: "healthy",
-      database: "connected",
+      status: 'healthy',
+      database: 'connected',
       timestamp: result.rows[0].now,
     });
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({
-      status: "unhealthy",
-      database: "disconnected",
+      status: 'unhealthy',
+      database: 'disconnected',
       error: errorMessage,
     });
   }
 });
 
-
 // Get all products
-app.get("/api/products", async (req: Request, res: Response) => {
+app.get('/api/products', async (req: Request, res: Response) => {
   try {
     const { style, minPrice, maxPrice, color, size, type, page, limit } = req.query;
 
-    console.log("Incoming Filters", req.query);
-
+    console.log('Incoming Filters', req.query);
 
     // Set Pagination
     const pageNumber = parseInt(page as string) || 1;
@@ -71,25 +70,24 @@ app.get("/api/products", async (req: Request, res: Response) => {
     const skip = (pageNumber - 1) * pageSize;
 
     const whereClause: any = {
-      status: "published",
+      status: 'published',
       inStock: true,
     };
 
     if (type) {
-      const searchKeyword = (type as string).replace(/s$/, ""); // Bỏ chữ 's' số nhiều nếu có
+      const searchKeyword = (type as string).replace(/s$/, ''); // Bỏ chữ 's' số nhiều nếu có
 
       whereClause.name = {
         contains: searchKeyword,
-        mode: 'insensitive'
+        mode: 'insensitive',
       };
     }
 
     if (style) {
       whereClause.category = {
-        name: { equals: style as string, mode: 'insensitive' }
+        name: { equals: style as string, mode: 'insensitive' },
       };
     }
-
 
     if (minPrice || maxPrice) {
       whereClause.price = {};
@@ -110,43 +108,45 @@ app.get("/api/products", async (req: Request, res: Response) => {
 
     // Quẻy Database
     const [total, products] = await prisma.$transaction([
-      prisma.product.count({ where: whereClause }), 
+      prisma.product.count({ where: whereClause }),
       prisma.product.findMany({
         where: whereClause,
         include: {
           category: true,
-          images: { orderBy: { position: "asc" } },
+          images: { orderBy: { position: 'asc' } },
         },
-        orderBy: { createdAt: "desc" },
-        skip: skip,   
-        take: pageSize, 
+        orderBy: { createdAt: 'desc' },
+        skip: skip,
+        take: pageSize,
       }),
     ]);
 
     const totalPages = Math.ceil(total / pageSize);
 
     // Transform Data
-    const data = products.map(p => ({
+    const data = products.map((p) => ({
       id: p.id,
       name: p.name,
       slug: p.slug,
-      summary: p.summary || "",
-      description: p.description || "",
-      price: p.price ? p.price.toString() : "0",
-      currency: p.currency || "USD",
+      summary: p.summary || '',
+      description: p.description || '',
+      price: p.price ? p.price.toString() : '0',
+      currency: p.currency || 'USD',
       inStock: p.inStock,
       featured: p.featured,
       status: p.status,
-      category: p.category ? {
-        id: p.category.id,
-        name: p.category.name,
-        slug: p.category.slug,
-      } : null,
-      images: (p.images || []).map(img => ({
+      category: p.category
+        ? {
+            id: p.category.id,
+            name: p.category.name,
+            slug: p.category.slug,
+          }
+        : null,
+      images: (p.images || []).map((img) => ({
         id: img.id,
         url: img.url,
-        altText: img.altText || "",
-        position: img.position
+        altText: img.altText || '',
+        position: img.position,
       })),
     }));
 
@@ -157,53 +157,51 @@ app.get("/api/products", async (req: Request, res: Response) => {
         page: pageNumber,
         limit: pageSize,
         totalPages,
-      }
+      },
     });
-
   } catch (error) {
-    console.error(" API Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error(' API Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
 // Get all products
-app.get("/api/products", async (_req: Request, res: Response) => {
+app.get('/api/products', async (_req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany({
       where: {
-        status: "published",
+        status: 'published',
         inStock: true,
       },
       include: {
         category: true,
         images: {
           orderBy: {
-            position: "asc",
+            position: 'asc',
           },
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
     });
 
     res.json(products);
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({
-      error: "Failed to fetch products",
+      error: 'Failed to fetch products',
       message: errorMessage,
     });
   }
 });
 
 // Get featured products
-app.get("/api/products/featured", async (_req: Request, res: Response) => {
+app.get('/api/products/featured', async (_req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany({
       where: {
-        status: "published",
+        status: 'published',
         featured: true,
         inStock: true,
       },
@@ -211,22 +209,21 @@ app.get("/api/products/featured", async (_req: Request, res: Response) => {
         category: true,
         images: {
           orderBy: {
-            position: "asc",
+            position: 'asc',
           },
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
       take: 8,
     });
 
     res.json(products);
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({
-      error: "Failed to fetch featured products",
+      error: 'Failed to fetch featured products',
       message: errorMessage,
     });
   }
@@ -243,21 +240,18 @@ app.get('/api/products/:slug', async (req: Request, res: Response) => {
       include: {
         category: true,
         images: {
-         
           orderBy: {
-            position: 'asc', 
+            position: 'asc',
           },
         },
       },
     });
 
- 
     if (!product) {
       res.status(404).json({ error: 'Product not found' });
       return;
     }
 
-    
     if (product.status !== 'published') {
       res.status(404).json({ error: 'Product is not available' });
       return;
@@ -273,15 +267,21 @@ app.get('/api/products/:slug', async (req: Request, res: Response) => {
   }
 });
 
+app.use('/auth', authRoutes);
+app.get('/', (req, res) => {
+  res.send('Sales Website Backend is running...');
+});
+app.use('/api/users', userRoutes);
+
 // Start server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
 
 // Graceful shutdown
-process.on("SIGINT", () => {
+process.on('SIGINT', () => {
   pool.end(() => {
-    console.log("Database pool closed");
+    console.log('Database pool closed');
     process.exit(0);
   });
 });
