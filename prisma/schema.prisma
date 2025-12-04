@@ -29,6 +29,7 @@ model Product {
   images      ProductImage[]
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
+  orderItems  OrderItem[]
 
   @@map("products")
 }
@@ -63,6 +64,63 @@ model User {
   name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  orders    Order[]
 
   @@map("users")
+}
+
+model Order {
+  id          Int    @id @default(autoincrement())
+  orderNumber String @unique // e.g., "TXNID983274"
+  userId      Int    @map("user_id")
+  user        User   @relation(fields: [userId], references: [id])
+
+  // Shipping Details
+  customerName    String
+  shippingAddress String
+  trackingNumber  String?
+
+  // Financials
+  totalAmount Decimal @db.Decimal(10, 2)
+  status      String  @default("PROCESSING") // PENDING, SHIPPED, DELIVERED
+
+  // Relations
+  items    OrderItem[]
+  timeline OrderEvent[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id      Int   @id @default(autoincrement())
+  orderId Int   @map("order_id")
+  order   Order @relation(fields: [orderId], references: [id])
+
+  // Snapshot of product details at time of purchase
+  productId Int     @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+
+  productName String
+  quantity    Int
+  price       Decimal @db.Decimal(10, 2)
+  color       String?
+  size        String?
+  image       String? // Snapshot of the image URL
+
+  @@map("order_items")
+}
+
+model OrderEvent {
+  id      Int   @id @default(autoincrement())
+  orderId Int   @map("order_id")
+  order   Order @relation(fields: [orderId], references: [id])
+
+  status      String // e.g., "Order Placed", "Shipped"
+  description String? // e.g., "Package arrived at Philadelphia facility"
+  timestamp   DateTime @default(now())
+
+  @@map("order_events")
 }
