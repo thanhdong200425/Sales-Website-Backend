@@ -5,6 +5,7 @@ import { AuthController } from "./auth.controller";
 import { authMiddleware } from "../../middleware/authMiddleware";
 
 const router = Router();
+console.log('>>> Auth Routes đã được nạp!');
 
 // --- PUBLIC ROUTES (Không cần Token) ---
 router.post("/register", AuthController.register); 
