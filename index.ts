@@ -1,10 +1,11 @@
-import dotenv from 'dotenv';
-import express, { Request, Response } from 'express';
-import { Pool } from 'pg';
-import cors from 'cors';
-import { prisma } from './prisma/prisma.js';
-import authRoutes from './src/modules/auth/auth.routes.js';
-import wishlistRoutes from './src/modules/wishlist/wishlist.routes.js';
+import dotenv from "dotenv";
+import express, { Request, Response } from "express";
+import { Pool } from "pg";
+import cors from "cors";
+import { prisma } from "./prisma/prisma.js";
+import authRoutes from "./src/modules/auth/auth.routes.js";
+import wishlistRoutes from "./src/modules/wishlist/wishlist.routes.js";
+import orderRoutes from "./src/modules/orders/orders.routes.js";
 import userRoutes from './src/modules/user/user.routes.js';
 dotenv.config();
 
@@ -15,6 +16,11 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Feature routes
+app.use("/auth", authRoutes);
+app.use("/wishlist", wishlistRoutes);
+app.use("/api/orders", orderRoutes);
 
 // PostgreSQL connection pool
 const pool = new Pool({
@@ -113,7 +119,7 @@ app.get('/api/items', async (req: Request, res: Response) => {
           category: true,
           images: { orderBy: { position: 'asc' } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip: skip,
         take: pageSize,
       }),
