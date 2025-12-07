@@ -1,12 +1,8 @@
-import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
+import "dotenv/config";
 
-const adapter = new PrismaPg({
-  connectionString: `${process.env.DATABASE_URL}`,
-});
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 const categorySeeds = [
   { name: "Clothing", slug: "clothing" },
@@ -25,6 +21,28 @@ const styleAdjectives = [
   "Active",
   "Heritage",
   "Elevated",
+];
+
+const colors = [
+  "#00C12B", // Green
+  "#F50606", // Red
+  "#F5DD06", // Yellow
+  "#F57906", // Orange
+  "#06CAF5", // Blue
+  "#063AF5", // Dark Blue
+  "#7D06F5", // Purple
+  "#F506A4", // Pink
+  "#FFFFFF", // White
+  "#000000"  // Black
+];
+
+const sizes = [
+  "XX-Small", "X-Small", "Small", "Medium", 
+  "Large", "X-Large", "XX-Large", "3X-Large", "4X-Large"
+];
+
+const styles = [
+  "Casual", "Formal", "Party", "Gym"
 ];
 
 const productTypes = [
@@ -52,6 +70,18 @@ const imagePool = [
   "https://images.unsplash.com/photo-1441986300917-64674bd600d8",
   "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
   "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab",
+  "https://images.unsplash.com/photo-1523381210434-271e8be1f52b", 
+  "https://images.unsplash.com/photo-1576566588028-4147f3842f27", 
+  "https://images.unsplash.com/photo-1551028919-ac66e6a39d7e", 
+  "https://images.unsplash.com/photo-1591047139829-d91aecb6caea", 
+  "https://images.unsplash.com/photo-1542291026-7eec264c27ff", 
+  "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa", 
+  "https://images.unsplash.com/photo-1549298916-b41d501d3772", 
+  "https://images.unsplash.com/photo-1552346154-21d32810aba3", 
+  "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a", 
+  "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a", 
+  "https://images.unsplash.com/photo-1578932750294-f5075e85f44a", 
+  "https://images.unsplash.com/photo-1550614000-4b9519e092a9", 
 ];
 
 const descriptions = [
@@ -89,11 +119,12 @@ const buildImages = (startIndex: number) => {
 };
 
 async function main() {
-  console.info("Seeding categories and products...");
+  console.info("Seeding categories, products and admin user...");
 
   await prisma.productImage.deleteMany();
   await prisma.product.deleteMany();
   await prisma.productCategory.deleteMany();
+  await prisma.favorite.deleteMany();
 
   const categories = await Promise.all(
     categorySeeds.map((category) =>
@@ -123,6 +154,9 @@ async function main() {
           featured: Math.random() > 0.7,
           status: "published",
           categoryId: category.id,
+          color: color,
+          size: size,   
+          style: style,
           images: {
             create: buildImages(index),
           },
@@ -134,18 +168,11 @@ async function main() {
   await Promise.all(productPromises);
 
   console.info(`Seeded ${PRODUCT_COUNT} products.`);
+
+  await seedUser();
 }
 
-main()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
-
-  async function seedUser() {
+async function seedUser() {
   console.info("Seeding admin user...");
 
   const exists = await prisma.user.findUnique({
@@ -165,3 +192,12 @@ main()
     console.info("Admin already exists, skipping...");
   }
 }
+
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
