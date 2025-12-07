@@ -14,9 +14,11 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
 
-app.get("/", (req, res) => {
-  res.send("Sales Website Backend is running...");
+app.get("/", (_req, res) => {
+    res.send("Sales Website Backend is running...");
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, () =>
+    console.log(`Server running on http://localhost:${PORT}`)
+);
