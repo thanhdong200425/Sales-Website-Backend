@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./modules/auth/auth.routes";
 import orderRoutes from "./modules/orders/orders.routes";
+import orderHistoryRoutes from "./modules/order-history/order-history.routes";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -13,6 +14,7 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/order-history", orderHistoryRoutes);
 
 app.get("/", (_req, res) => {
     res.send("Sales Website Backend is running...");
