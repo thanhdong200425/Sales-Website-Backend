@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import authRoutes from "./modules/auth/auth.routes";
+import orderRoutes from "./modules/orders/orders.routes";
+import orderHistoryRoutes from "./modules/order-history/order-history.routes";
 import wishlistRoutes from "./modules/wishlist/wishlist.routes";
 import orderRoutes from "./modules/orders/orders.routes";
 
@@ -13,6 +15,12 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/order-history", orderHistoryRoutes);
+
+app.get("/", (_req, res) => {
+    res.send("Sales Website Backend is running...");
 console.log('Registering Auth Routes...');
 app.use('/auth', authRoutes);
 
