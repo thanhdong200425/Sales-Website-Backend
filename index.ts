@@ -7,13 +7,45 @@ import authRoutes from "./src/modules/auth/auth.routes.js";
 import wishlistRoutes from "./src/modules/wishlist/wishlist.routes.js";
 import orderRoutes from "./src/modules/orders/orders.routes.js";
 import userRoutes from './src/modules/user/user.routes.js';
+import paymentRoutes from './src/modules/payments/payment.routes.js';
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// Middleware - CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:3000',
+  'http://localhost:5173', // Vite default port
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'http://localhost:5174', // Vite alternate port
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // In development, allow all localhost origins
+    if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+    }
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -277,6 +309,7 @@ app.get('/api/products/:slug', async (req: Request, res: Response) => {
 app.use('/auth', authRoutes);
 app.use('/wishlist', wishlistRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Start server
 app.listen(port, () => {
