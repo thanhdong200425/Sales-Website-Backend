@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import * as orderService from './orders.service';
+import * as orderHistoryService from './order-history.service';
 import { JwtPayload } from 'jsonwebtoken';
 
 interface UserPayload extends JwtPayload {
@@ -10,9 +10,9 @@ interface UserPayload extends JwtPayload {
 
 /**
  * Get order history for the authenticated user
- * GET /api/orders
+ * GET /api/order-history
  */
-export const getHistory = async (req: Request, res: Response) => {
+export const getOrderHistory = async (req: Request, res: Response) => {
   try {
     // Get userId from authenticated token
     const user = req.user as UserPayload;
@@ -24,7 +24,7 @@ export const getHistory = async (req: Request, res: Response) => {
       });
     }
 
-    const orders = await orderService.getOrdersByUserId(user.userId);
+    const orders = await orderHistoryService.getOrderHistoryByUserId(user.userId);
     
     res.status(200).json({
       success: true,
@@ -33,7 +33,7 @@ export const getHistory = async (req: Request, res: Response) => {
       count: orders.length,
     });
   } catch (error) {
-    console.error('Error in getHistory:', error);
+    console.error('Error in getOrderHistory:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve order history',
@@ -43,10 +43,10 @@ export const getHistory = async (req: Request, res: Response) => {
 };
 
 /**
- * Get order detail by ID
- * GET /api/orders/:id
+ * Get order detail by ID from order history
+ * GET /api/order-history/:id
  */
-export const getOrderDetail = async (req: Request, res: Response) => {
+export const getOrderHistoryDetail = async (req: Request, res: Response) => {
   try {
     // Get userId from authenticated token
     const user = req.user as UserPayload;
@@ -67,7 +67,7 @@ export const getOrderDetail = async (req: Request, res: Response) => {
       });
     }
 
-    const order = await orderService.getOrderById(orderId, user.userId);
+    const order = await orderHistoryService.getOrderHistoryDetail(orderId, user.userId);
 
     if (!order) {
       return res.status(404).json({
@@ -82,7 +82,7 @@ export const getOrderDetail = async (req: Request, res: Response) => {
       data: order,
     });
   } catch (error) {
-    console.error('Error in getOrderDetail:', error);
+    console.error('Error in getOrderHistoryDetail:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve order detail',
@@ -90,29 +90,4 @@ export const getOrderDetail = async (req: Request, res: Response) => {
     });
   }
 };
-// src/modules/orders/orders.controller.ts
-import { Request, Response } from "express";
-import { OrderService } from "./orders.service";
 
-export class OrderController {
-  static async getOrder(req: Request, res: Response) {
-    try {
-      const { orderNumber } = req.params;
-      const order = await OrderService.getOrderByNumber(orderNumber);
-
-      // Return data in a format close to what your Frontend expects
-      res.json({ success: true, data: order });
-    } catch (error: any) {
-      res.status(404).json({ success: false, message: error.message });
-    }
-  }
-
-  static async createTest(req: Request, res: Response) {
-    try {
-      const order = await OrderService.createTestOrder();
-      res.json(order);
-    } catch (error) {
-      res.status(500).json({ error });
-    }
-  }
-}
