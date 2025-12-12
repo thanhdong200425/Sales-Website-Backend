@@ -27,8 +27,11 @@ model Product {
   inStock     Boolean         @default(true) @map("in_stock")
   featured    Boolean         @default(false)
   status      String          @default("DRAFT")
+  stockLevel  Int             @default(0) @map("stock_level")
   category    ProductCategory @relation(fields: [categoryId], references: [id])
   categoryId  Int             @map("category_id")
+  vendor      Vendor?         @relation(fields: [vendorId], references: [id])
+  vendorId    Int?            @map("vendor_id")
   images      ProductImage[]
   orderItems  OrderItem[]
   favoritedBy Favorite[]
@@ -72,6 +75,27 @@ model User {
   updatedAt   DateTime   @updatedAt
 
   @@map("users")
+}
+
+model Vendor {
+  id              Int       @id @default(autoincrement())
+  email           String    @unique
+  password        String
+  businessName    String    @map("business_name")
+  contactName     String?   @map("contact_name")
+  phone           String?
+  address         String?
+  avatar          String?
+  averageRating   Decimal   @default(0) @db.Decimal(3, 2) @map("average_rating")
+  totalReviews    Int       @default(0) @map("total_reviews")
+  responseTime    Int       @default(0) @map("response_time") // in minutes
+  fulfillmentRate Decimal   @default(0) @db.Decimal(5, 2) @map("fulfillment_rate")
+  status          String    @default("ACTIVE") // ACTIVE, SUSPENDED, PENDING
+  products        Product[]
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("vendors")
 }
 
 model Favorite {
