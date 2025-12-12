@@ -160,7 +160,7 @@ app.get('/api/items', async (req: Request, res: Response) => {
     const totalPages = Math.ceil(total / pageSize);
 
     // Transform Data
-    const data = products.map((p) => ({
+    const data = products.map((p:any) => ({
       id: p.id,
       name: p.name,
       slug: p.slug,
@@ -181,7 +181,7 @@ app.get('/api/items', async (req: Request, res: Response) => {
             slug: p.category.slug,
           }
         : null,
-      images: (p.images || []).map((img) => ({
+      images: (p.images || []).map((img: any) => ({
         id: img.id,
         url: img.url,
         altText: img.altText || '',
