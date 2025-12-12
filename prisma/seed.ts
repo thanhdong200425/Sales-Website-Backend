@@ -121,10 +121,10 @@ const buildImages = (startIndex: number) => {
 async function main() {
   console.info("Seeding categories, products and admin user...");
 
+  await prisma.favorite.deleteMany();
   await prisma.productImage.deleteMany();
   await prisma.product.deleteMany();
   await prisma.productCategory.deleteMany();
-  await prisma.favorite.deleteMany();
 
   const categories = await Promise.all(
     categorySeeds.map((category) =>
@@ -154,9 +154,9 @@ async function main() {
           featured: Math.random() > 0.7,
           status: "published",
           categoryId: category.id,
-          color: color,
-          size: size,   
-          style: style,
+      color: randomFrom(colors),
+      size: randomFrom(sizes),
+      style: randomFrom(styles),
           images: {
             create: buildImages(index),
           },
