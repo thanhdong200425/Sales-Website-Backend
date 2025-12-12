@@ -8,6 +8,8 @@ import wishlistRoutes from "./src/modules/wishlist/wishlist.routes.js";
 import orderRoutes from "./src/modules/orders/orders.routes.js";
 import userRoutes from './src/modules/user/user.routes.js';
 import paymentRoutes from './src/modules/payments/payment.routes.js';
+import vendorAuthRoutes from './src/modules/vendor-auth/vendor-auth.routes.js';
+import vendorDashboardRoutes from './src/modules/vendor-dashboard/vendor-dashboard.routes.js';
 dotenv.config();
 
 const app = express();
@@ -310,6 +312,10 @@ app.use('/auth', authRoutes);
 app.use('/wishlist', wishlistRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
+
+// Vendor Routes
+app.use('/api/vendor/auth', vendorAuthRoutes);
+app.use('/api/vendor/dashboard', vendorDashboardRoutes);
 
 // Start server
 app.listen(port, () => {
