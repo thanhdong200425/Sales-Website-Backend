@@ -37,7 +37,7 @@ const colors = [
 ];
 
 const sizes = [
-  "XX-Small", "X-Small", "Small", "Medium", 
+  "XX-Small", "X-Small", "Small", "Medium",
   "Large", "X-Large", "XX-Large", "3X-Large", "4X-Large"
 ];
 
@@ -70,18 +70,18 @@ const imagePool = [
   "https://images.unsplash.com/photo-1441986300917-64674bd600d8",
   "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
   "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab",
-  "https://images.unsplash.com/photo-1523381210434-271e8be1f52b", 
-  "https://images.unsplash.com/photo-1576566588028-4147f3842f27", 
-  "https://images.unsplash.com/photo-1551028919-ac66e6a39d7e", 
-  "https://images.unsplash.com/photo-1591047139829-d91aecb6caea", 
-  "https://images.unsplash.com/photo-1542291026-7eec264c27ff", 
-  "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa", 
-  "https://images.unsplash.com/photo-1549298916-b41d501d3772", 
-  "https://images.unsplash.com/photo-1552346154-21d32810aba3", 
-  "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a", 
-  "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a", 
-  "https://images.unsplash.com/photo-1578932750294-f5075e85f44a", 
-  "https://images.unsplash.com/photo-1550614000-4b9519e092a9", 
+  "https://images.unsplash.com/photo-1523381210434-271e8be1f52b",
+  "https://images.unsplash.com/photo-1576566588028-4147f3842f27",
+  "https://images.unsplash.com/photo-1551028919-ac66e6a39d7e",
+  "https://images.unsplash.com/photo-1591047139829-d91aecb6caea",
+  "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
+  "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa",
+  "https://images.unsplash.com/photo-1549298916-b41d501d3772",
+  "https://images.unsplash.com/photo-1552346154-21d32810aba3",
+  "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a",
+  "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a",
+  "https://images.unsplash.com/photo-1578932750294-f5075e85f44a",
+  "https://images.unsplash.com/photo-1550614000-4b9519e092a9",
 ];
 
 const descriptions = [
@@ -104,7 +104,7 @@ const slugify = (value: string) =>
 const randomFrom = <T>(items: T[]): T =>
   items[Math.floor(Math.random() * items.length)];
 
-const randomPrice = () => (Math.floor(Math.random() * 120) + 30).toFixed(2);
+const randomPrice = () => Number(Math.floor(Math.random() * 120) + 30).toFixed(2);
 
 const buildImages = (startIndex: number) => {
   const count = Math.floor(Math.random() * 3) + 1; // 1-3 images
@@ -118,6 +118,25 @@ const buildImages = (startIndex: number) => {
   });
 };
 
+async function getOrCreateAdmin() {
+  console.info("Seeding admin user...");
+  const password = await bcrypt.hash("123456", 10);
+
+  const user = await prisma.user.upsert({
+    where: { email: "admin@example.com" },
+    update: {},
+    create: {
+      email: "admin@example.com",
+      password: password,
+      name: "Admin",
+      role: "vendor",
+    },
+  });
+
+  console.info(`Admin user ready: ID ${user.id}`);
+  return user;
+}
+
 async function main() {
   console.info("Seeding categories, products and admin user...");
 
@@ -126,11 +145,15 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.productCategory.deleteMany();
 
+  const adminUser = await getOrCreateAdmin();
+
   const categories = await Promise.all(
     categorySeeds.map((category) =>
       prisma.productCategory.create({ data: category })
     )
   );
+
+  console.info("Seeding products...");
 
   const productPromises = Array.from({ length: PRODUCT_COUNT }).map(
     async (_, index) => {
@@ -153,10 +176,15 @@ async function main() {
           inStock: Math.random() > 0.1,
           featured: Math.random() > 0.7,
           status: "published",
-          categoryId: category.id,
-      color: randomFrom(colors),
-      size: randomFrom(sizes),
-      style: randomFrom(styles),
+          category: {
+            connect: { id: category.id }
+          },
+          owner: {
+            connect: { id: adminUser.id }
+          },
+          color: randomFrom(colors),
+          size: randomFrom(sizes),
+          style: randomFrom(styles),
           images: {
             create: buildImages(index),
           },
@@ -167,7 +195,7 @@ async function main() {
 
   await Promise.all(productPromises);
 
-  console.info(`Seeded ${PRODUCT_COUNT} products.`);
+  console.info(`Seeded ${PRODUCT_COUNT} products successfully.`);
 
   await seedUser();
 }
