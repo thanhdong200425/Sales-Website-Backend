@@ -24,7 +24,4 @@ const router = Router();
 // Example: GET /api/orders/TXNID983274
 router.get("/:orderNumber", OrderController.getOrder);
 
-// Helper route to create data so you have something to test
-router.post("/seed", OrderController.createTest);
-
 export default router;
