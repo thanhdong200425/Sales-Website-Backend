@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as orderService from './orders.service';
+import { OrderService } from './orders.service';
 import { JwtPayload } from 'jsonwebtoken';
 
 interface UserPayload extends JwtPayload {
@@ -16,7 +17,7 @@ export const getHistory = async (req: Request, res: Response) => {
   try {
     // Get userId from authenticated token
     const user = req.user as UserPayload;
-    
+
     if (!user || typeof user.userId !== 'number') {
       return res.status(401).json({
         success: false,
@@ -25,7 +26,7 @@ export const getHistory = async (req: Request, res: Response) => {
     }
 
     const orders = await orderService.getOrdersByUserId(user.userId);
-    
+
     res.status(200).json({
       success: true,
       message: 'Order history retrieved successfully',
@@ -50,7 +51,7 @@ export const getOrderDetail = async (req: Request, res: Response) => {
   try {
     // Get userId from authenticated token
     const user = req.user as UserPayload;
-    
+
     if (!user || typeof user.userId !== 'number') {
       return res.status(401).json({
         success: false,
@@ -94,6 +95,10 @@ export const getOrderDetail = async (req: Request, res: Response) => {
 import { Request, Response } from "express";
 import { getOrderByNumber } from "./orders.service";
 
+/**
+ * Get order by order number
+ * GET /api/orders/status/:orderNumber
+ */
 export class OrderController {
   static async getOrder(req: Request, res: Response) {
     try {

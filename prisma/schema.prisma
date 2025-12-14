@@ -20,21 +20,23 @@ model Product {
   summary     String?
   description String?
   price       Decimal         @db.Decimal(10, 2)
-  color       String?        
-  size        String?        
+  color       String?
+  size        String?
   style       String?
   currency    String          @default("USD")
   inStock     Boolean         @default(true) @map("in_stock")
   featured    Boolean         @default(false)
   status      String          @default("DRAFT")
+  stockLevel  Int             @default(0) @map("stock_level")
   category    ProductCategory @relation(fields: [categoryId], references: [id])
   categoryId  Int             @map("category_id")
+  vendor      Vendor?         @relation(fields: [vendorId], references: [id])
+  vendorId    Int?            @map("vendor_id")
   images      ProductImage[]
   orderItems  OrderItem[]
   favoritedBy Favorite[]
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
-  orderItems  OrderItem[]
 
   @@map("products")
 }
@@ -63,16 +65,18 @@ model ProductImage {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String?
-  orders    Order[]
+  id          Int        @id @default(autoincrement())
+  email       String     @unique
+  password    String
+  name        String?
+  orders      Order[]
   favoritedBy Favorite[]
   passwordResets PasswordResetToken[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   orders    Order[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@map("users")
 }
@@ -91,32 +95,28 @@ model PasswordResetToken {
   @@index([userId])
 }
 
-model Order {
-  id        Int         @id @default(autoincrement())
-  userId    Int         @map("user_id")
-  date      DateTime    @default(now())
-  status    String
-  total     Float
-  items     OrderItem[]
-  user      User        @relation(fields: [userId], references: [id])
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
-
   @@map("orders") 
+model Vendor {
+  id              Int       @id @default(autoincrement())
+  email           String    @unique
+  password        String
+  businessName    String    @map("business_name")
+  contactName     String?   @map("contact_name")
+  phone           String?
+  address         String?
+  avatar          String?
+  averageRating   Decimal   @default(0) @db.Decimal(3, 2) @map("average_rating")
+  totalReviews    Int       @default(0) @map("total_reviews")
+  responseTime    Int       @default(0) @map("response_time") // in minutes
+  fulfillmentRate Decimal   @default(0) @db.Decimal(5, 2) @map("fulfillment_rate")
+  status          String    @default("ACTIVE") // ACTIVE, SUSPENDED, PENDING
+  products        Product[]
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("vendors")
 }
 
-model OrderItem {
-  id        Int      @id @default(autoincrement())
-  orderId   Int      @map("order_id")
-  productId Int      @map("product_id")
-  quantity  Int      @default(1)
-  price     Float
-  product   Product  @relation(fields: [productId], references: [id])
-  order     Order    @relation(fields: [orderId], references: [id])
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("order_items")
-}
 model Favorite {
   user       User     @relation(fields: [userId], references: [id])
   userId     Int      @map("user_id")
@@ -127,6 +127,7 @@ model Favorite {
   @@id([userId, productId])
   @@map("favorites")
 }
+
 model Order {
   id          Int    @id @default(autoincrement())
   orderNumber String @unique // e.g., "TXNID983274"
