@@ -6,10 +6,12 @@ import { prisma } from "./prisma/prisma.js";
 import authRoutes from "./src/modules/auth/auth.routes.js";
 import wishlistRoutes from "./src/modules/wishlist/wishlist.routes.js";
 import orderRoutes from "./src/modules/orders/orders.routes.js";
-import userRoutes from './src/modules/user/user.routes.js';
-import paymentRoutes from './src/modules/payments/payment.routes.js';
-import vendorAuthRoutes from './src/modules/vendor-auth/vendor-auth.routes.js';
-import vendorDashboardRoutes from './src/modules/vendor-dashboard/vendor-dashboard.routes.js';
+import orderHistoryRoutes from "./src/modules/order-history/order-history.routes.js";
+import userRoutes from "./src/modules/user/user.routes.js";
+import paymentRoutes from "./src/modules/payments/payment.routes.js";
+import vendorAuthRoutes from "./src/modules/vendor-auth/vendor-auth.routes.js";
+import vendorDashboardRoutes from "./src/modules/vendor-dashboard/vendor-dashboard.routes.js";
+import vendorOrdersRoutes from "./src/modules/vendor-orders/vendor-orders.routes.js";
 dotenv.config();
 
 const app = express();
@@ -17,37 +19,39 @@ const port = process.env.PORT || 3000;
 
 // Middleware - CORS configuration
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:3000',
-  'http://localhost:3000',
-  'http://localhost:5173', // Vite default port
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:5173',
-  'http://localhost:5174', // Vite alternate port
+  process.env.FRONTEND_URL || "http://localhost:3000",
+  "http://localhost:3000",
+  "http://localhost:5173", // Vite default port
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:5173",
+  "http://localhost:5174", // Vite alternate port
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
 
-    // In development, allow all localhost origins
-    if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
-      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-        return callback(null, true);
+      // In development, allow all localhost origins
+      if (process.env.NODE_ENV === "development" || !process.env.NODE_ENV) {
+        if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+          return callback(null, true);
+        }
       }
-    }
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.log("CORS blocked origin:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -66,43 +70,45 @@ const pool = new Pool({
 });
 
 // Test database connection
-pool.query('SELECT NOW()', (err, res) => {
+pool.query("SELECT NOW()", (err, res) => {
   if (err) {
-    console.error('Error connecting to the database:', err);
+    console.error("Error connecting to the database:", err);
   } else {
-    console.log('Database connected successfully at:', res.rows[0].now);
+    console.log("Database connected successfully at:", res.rows[0].now);
   }
 });
 
 // Routes
-app.get('/', (_req: Request, res: Response) => {
-  res.json({ message: 'Welcome to Express.js with PostgreSQL!' });
+app.get("/", (_req: Request, res: Response) => {
+  res.json({ message: "Welcome to Express.js with PostgreSQL!" });
 });
 
-app.get('/health', async (_req: Request, res: Response) => {
+app.get("/health", async (_req: Request, res: Response) => {
   try {
-    const result = await pool.query('SELECT NOW()');
+    const result = await pool.query("SELECT NOW()");
     res.json({
-      status: 'healthy',
-      database: 'connected',
+      status: "healthy",
+      database: "connected",
       timestamp: result.rows[0].now,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     res.status(500).json({
-      status: 'unhealthy',
-      database: 'disconnected',
+      status: "unhealthy",
+      database: "disconnected",
       error: errorMessage,
     });
   }
 });
 
 // Get all products
-app.get('/api/items', async (req: Request, res: Response) => {
+app.get("/api/items", async (req: Request, res: Response) => {
   try {
-    const { style, minPrice, maxPrice, color, size, type, page, limit } = req.query;
+    const { style, minPrice, maxPrice, color, size, type, page, limit } =
+      req.query;
 
-    console.log('Incoming Filters', req.query);
+    console.log("Incoming Filters", req.query);
 
     // Set Pagination
     const pageNumber = parseInt(page as string) || 1;
@@ -110,21 +116,21 @@ app.get('/api/items', async (req: Request, res: Response) => {
     const skip = (pageNumber - 1) * pageSize;
 
     const whereClause: any = {
-      status: 'published',
+      status: "published",
       inStock: true,
     };
 
     if (type) {
-      const searchKeyword = (type as string).replace(/s$/, ''); // Bỏ chữ 's' số nhiều nếu có
+      const searchKeyword = (type as string).replace(/s$/, ""); // Bỏ chữ 's' số nhiều nếu có
 
       whereClause.name = {
         contains: searchKeyword,
-        mode: 'insensitive',
+        mode: "insensitive",
       };
     }
 
     if (style) {
-      whereClause.style = { equals: style as string, mode: 'insensitive' };
+      whereClause.style = { equals: style as string, mode: "insensitive" };
     }
 
     if (minPrice || maxPrice) {
@@ -137,10 +143,10 @@ app.get('/api/items', async (req: Request, res: Response) => {
       }
     }
     if (color) {
-      whereClause.color = { equals: color as string, mode: 'insensitive' };
+      whereClause.color = { equals: color as string, mode: "insensitive" };
     }
     if (size) {
-      whereClause.size = { equals: size as string, mode: 'insensitive' };
+      whereClause.size = { equals: size as string, mode: "insensitive" };
     }
     // console.log("Prisma Where Clause:", JSON.stringify(whereClause, null, 2));
 
@@ -151,7 +157,7 @@ app.get('/api/items', async (req: Request, res: Response) => {
         where: whereClause,
         include: {
           category: true,
-          images: { orderBy: { position: 'asc' } },
+          images: { orderBy: { position: "asc" } },
         },
         orderBy: { createdAt: "desc" },
         skip: skip,
@@ -162,14 +168,14 @@ app.get('/api/items', async (req: Request, res: Response) => {
     const totalPages = Math.ceil(total / pageSize);
 
     // Transform Data
-    const data = products.map((p:any) => ({
+    const data = products.map((p: any) => ({
       id: p.id,
       name: p.name,
       slug: p.slug,
-      summary: p.summary || '',
-      description: p.description || '',
-      price: p.price ? p.price.toString() : '0',
-      currency: p.currency || 'USD',
+      summary: p.summary || "",
+      description: p.description || "",
+      price: p.price ? p.price.toString() : "0",
+      currency: p.currency || "USD",
       inStock: p.inStock,
       featured: p.featured,
       status: p.status,
@@ -186,7 +192,7 @@ app.get('/api/items', async (req: Request, res: Response) => {
       images: (p.images || []).map((img: any) => ({
         id: img.id,
         url: img.url,
-        altText: img.altText || '',
+        altText: img.altText || "",
         position: img.position,
       })),
     }));
@@ -201,48 +207,49 @@ app.get('/api/items', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error(' API Error:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error(" API Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 // Get all products
-app.get('/api/products', async (_req: Request, res: Response) => {
+app.get("/api/products", async (_req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany({
       where: {
-        status: 'published',
+        status: "published",
         inStock: true,
       },
       include: {
         category: true,
         images: {
           orderBy: {
-            position: 'asc',
+            position: "asc",
           },
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
     res.json(products);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     res.status(500).json({
-      error: 'Failed to fetch products',
+      error: "Failed to fetch products",
       message: errorMessage,
     });
   }
 });
 
 // Get featured products
-app.get('/api/products/featured', async (_req: Request, res: Response) => {
+app.get("/api/products/featured", async (_req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany({
       where: {
-        status: 'published',
+        status: "published",
         featured: true,
         inStock: true,
       },
@@ -250,27 +257,28 @@ app.get('/api/products/featured', async (_req: Request, res: Response) => {
         category: true,
         images: {
           orderBy: {
-            position: 'asc',
+            position: "asc",
           },
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
       take: 8,
     });
 
     res.json(products);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     res.status(500).json({
-      error: 'Failed to fetch featured products',
+      error: "Failed to fetch featured products",
       message: errorMessage,
     });
   }
 });
 // Get detail product by name
-app.get('/api/products/:slug', async (req: Request, res: Response) => {
+app.get("/api/products/:slug", async (req: Request, res: Response) => {
   try {
     const { slug } = req.params;
 
@@ -282,40 +290,43 @@ app.get('/api/products/:slug', async (req: Request, res: Response) => {
         category: true,
         images: {
           orderBy: {
-            position: 'asc',
+            position: "asc",
           },
         },
       },
     });
 
     if (!product) {
-      res.status(404).json({ error: 'Product not found' });
+      res.status(404).json({ error: "Product not found" });
       return;
     }
 
-    if (product.status !== 'published') {
-      res.status(404).json({ error: 'Product is not available' });
+    if (product.status !== "published") {
+      res.status(404).json({ error: "Product is not available" });
       return;
     }
 
     res.json(product);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     res.status(500).json({
-      error: 'Failed to fetch product detail',
+      error: "Failed to fetch product detail",
       message: errorMessage,
     });
   }
 });
 
-app.use('/auth', authRoutes);
-app.use('/wishlist', wishlistRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use("/auth", authRoutes);
+app.use("/wishlist", wishlistRoutes);
+app.use("/api/order-history", orderHistoryRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // Vendor Routes
-app.use('/api/vendor/auth', vendorAuthRoutes);
-app.use('/api/vendor/dashboard', vendorDashboardRoutes);
+app.use("/api/vendor/auth", vendorAuthRoutes);
+app.use("/api/vendor/dashboard", vendorDashboardRoutes);
+app.use("/api/vendor/orders", vendorOrdersRoutes);
 
 // Start server
 app.listen(port, () => {
@@ -323,9 +334,9 @@ app.listen(port, () => {
 });
 
 // Graceful shutdown
-process.on('SIGINT', () => {
+process.on("SIGINT", () => {
   pool.end(() => {
-    console.log('Database pool closed');
+    console.log("Database pool closed");
     process.exit(0);
   });
 });
