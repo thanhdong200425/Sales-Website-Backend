@@ -37,15 +37,8 @@ const colors = [
 ];
 
 const sizes = [
-    "XX-Small",
-    "X-Small",
-    "Small",
-    "Medium",
-    "Large",
-    "X-Large",
-    "XX-Large",
-    "3X-Large",
-    "4X-Large",
+  "XX-Small", "X-Small", "Small", "Medium",
+  "Large", "X-Large", "XX-Large", "3X-Large", "4X-Large"
 ];
 
 const styles = ["Casual", "Formal", "Party", "Gym"];
@@ -69,24 +62,24 @@ const productTypes = [
 ];
 
 const imagePool = [
-    "https://images.unsplash.com/photo-1475180098004-ca77a66827be",
-    "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb",
-    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-    "https://images.unsplash.com/photo-1441986300917-64674bd600d8",
-    "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
-    "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab",
-    "https://images.unsplash.com/photo-1523381210434-271e8be1f52b",
-    "https://images.unsplash.com/photo-1576566588028-4147f3842f27",
-    "https://images.unsplash.com/photo-1551028919-ac66e6a39d7e",
-    "https://images.unsplash.com/photo-1591047139829-d91aecb6caea",
-    "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
-    "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa",
-    "https://images.unsplash.com/photo-1549298916-b41d501d3772",
-    "https://images.unsplash.com/photo-1552346154-21d32810aba3",
-    "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a",
-    "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a",
-    "https://images.unsplash.com/photo-1578932750294-f5075e85f44a",
-    "https://images.unsplash.com/photo-1550614000-4b9519e092a9",
+  "https://images.unsplash.com/photo-1475180098004-ca77a66827be",
+  "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb",
+  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
+  "https://images.unsplash.com/photo-1441986300917-64674bd600d8",
+  "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
+  "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab",
+  "https://images.unsplash.com/photo-1523381210434-271e8be1f52b",
+  "https://images.unsplash.com/photo-1576566588028-4147f3842f27",
+  "https://images.unsplash.com/photo-1551028919-ac66e6a39d7e",
+  "https://images.unsplash.com/photo-1591047139829-d91aecb6caea",
+  "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
+  "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa",
+  "https://images.unsplash.com/photo-1549298916-b41d501d3772",
+  "https://images.unsplash.com/photo-1552346154-21d32810aba3",
+  "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a",
+  "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a",
+  "https://images.unsplash.com/photo-1578932750294-f5075e85f44a",
+  "https://images.unsplash.com/photo-1550614000-4b9519e092a9",
 ];
 
 const descriptions = [
@@ -109,7 +102,7 @@ const slugify = (value: string) =>
 const randomFrom = <T>(items: T[]): T =>
     items[Math.floor(Math.random() * items.length)];
 
-const randomPrice = () => (Math.floor(Math.random() * 120) + 30).toFixed(2);
+const randomPrice = () => Number(Math.floor(Math.random() * 120) + 30).toFixed(2);
 
 const buildImages = (startIndex: number) => {
     const count = Math.floor(Math.random() * 3) + 1; // 1-3 images
@@ -122,6 +115,25 @@ const buildImages = (startIndex: number) => {
         };
     });
 };
+
+async function getOrCreateAdmin() {
+  console.info("Seeding admin user...");
+  const password = await bcrypt.hash("123456", 10);
+
+  const user = await prisma.user.upsert({
+    where: { email: "admin@example.com" },
+    update: {},
+    create: {
+      email: "admin@example.com",
+      password: password,
+      name: "Admin",
+      role: "vendor",
+    },
+  });
+
+  console.info(`Admin user ready: ID ${user.id}`);
+  return user;
+}
 
 async function main() {
     console.info("Seeding categories, products and admin user...");
@@ -177,6 +189,60 @@ async function main() {
     await seedUser();
     await seedNotifications();
 }
+  console.info("Seeding categories, products and admin user...");
+
+  await prisma.favorite.deleteMany();
+  await prisma.productImage.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.productCategory.deleteMany();
+
+  const adminUser = await getOrCreateAdmin();
+
+  const categories = await Promise.all(
+    categorySeeds.map((category) =>
+      prisma.productCategory.create({ data: category })
+    )
+  );
+
+  console.info("Seeding products...");
+
+  const productPromises = Array.from({ length: PRODUCT_COUNT }).map(
+    async (_, index) => {
+      const adjective = randomFrom(styleAdjectives);
+      const type = randomFrom(productTypes);
+      const name = `${adjective} ${type}`;
+      const slug = `${slugify(name)}-${index + 1}`;
+      const category = categories[index % categories.length];
+
+      return prisma.product.create({
+        data: {
+          name,
+          slug,
+          summary: randomFrom(descriptions),
+          description: `${randomFrom(descriptions)} ${randomFrom(
+            descriptions
+          )}`,
+          price: randomPrice(),
+          currency,
+          inStock: Math.random() > 0.1,
+          featured: Math.random() > 0.7,
+          status: "published",
+          category: {
+            connect: { id: category.id }
+          },
+          owner: {
+            connect: { id: adminUser.id }
+          },
+          color: randomFrom(colors),
+          size: randomFrom(sizes),
+          style: randomFrom(styles),
+          images: {
+            create: buildImages(index),
+          },
+        },
+      });
+    }
+  );
 
 async function seedUser() {
     console.info("Seeding admin user...");
@@ -184,6 +250,7 @@ async function seedUser() {
     const exists = await prisma.user.findUnique({
         where: { email: "admin@example.com" },
     });
+  console.info(`Seeded ${PRODUCT_COUNT} products successfully.`);
 
     if (!exists) {
         await prisma.user.create({

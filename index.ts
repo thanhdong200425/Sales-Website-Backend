@@ -8,13 +8,48 @@ import wishlistRoutes from "./src/modules/wishlist/wishlist.routes.js";
 import orderRoutes from "./src/modules/orders/orders.routes.js";
 import userRoutes from "./src/modules/user/user.routes.js";
 import notificationRoutes from "./src/modules/notifications/notifications.routes.js";
+import paymentRoutes from './src/modules/payments/payment.routes.js';
+import vendorAuthRoutes from './src/modules/vendor-auth/vendor-auth.routes.js';
+import vendorDashboardRoutes from './src/modules/vendor-dashboard/vendor-dashboard.routes.js';
+import productRoutes from "./src/modules/products/product.routes";
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// Middleware - CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:3000',
+  'http://localhost:5173', // Vite default port
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'http://localhost:5174', // Vite alternate port
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // In development, allow all localhost origins
+    if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+    }
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -66,26 +101,25 @@ app.get("/health", async (_req: Request, res: Response) => {
     }
 });
 
-// Get all products
-app.get("/api/items", async (req: Request, res: Response) => {
-    try {
-        const { style, minPrice, maxPrice, color, size, type, page, limit } =
-            req.query;
+// Get all items
+app.get('/api/items', async (req: Request, res: Response) => {
+  try {
+    const { style, minPrice, maxPrice, color, size, type, page, limit } = req.query;
 
         console.log("Incoming Filters", req.query);
 
-        // Set Pagination
-        const pageNumber = parseInt(page as string) || 1;
-        const pageSize = parseInt(limit as string) || 9; // Mặc định 9 sản phẩm/trang (cho đẹp grid 3x3)
-        const skip = (pageNumber - 1) * pageSize;
+    // Set Pagination
+    const pageNumber = parseInt(page as string) || 1;
+    const pageSize = parseInt(limit as string) || 9; 
+    const skip = (pageNumber - 1) * pageSize;
 
         const whereClause: any = {
             status: "published",
             inStock: true,
         };
 
-        if (type) {
-            const searchKeyword = (type as string).replace(/s$/, ""); // Bỏ chữ 's' số nhiều nếu có
+    if (type) {
+      const searchKeyword = (type as string).replace(/s$/, ''); 
 
             whereClause.name = {
                 contains: searchKeyword,
@@ -137,35 +171,35 @@ app.get("/api/items", async (req: Request, res: Response) => {
 
         const totalPages = Math.ceil(total / pageSize);
 
-        // Transform Data
-        const data = products.map((p) => ({
-            id: p.id,
-            name: p.name,
-            slug: p.slug,
-            summary: p.summary || "",
-            description: p.description || "",
-            price: p.price ? p.price.toString() : "0",
-            currency: p.currency || "USD",
-            inStock: p.inStock,
-            featured: p.featured,
-            status: p.status,
-            color: p.color,
-            size: p.size,
-            style: p.style,
-            category: p.category
-                ? {
-                      id: p.category.id,
-                      name: p.category.name,
-                      slug: p.category.slug,
-                  }
-                : null,
-            images: (p.images || []).map((img) => ({
-                id: img.id,
-                url: img.url,
-                altText: img.altText || "",
-                position: img.position,
-            })),
-        }));
+    // Transform Data
+    const data = products.map((p:any) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      summary: p.summary || '',
+      description: p.description || '',
+      price: p.price ? p.price.toString() : '0',
+      currency: p.currency || 'USD',
+      inStock: p.inStock,
+      featured: p.featured,
+      status: p.status,
+      color: p.color,
+      size: p.size,
+      style: p.style,
+      category: p.category
+        ? {
+            id: p.category.id,
+            name: p.category.name,
+            slug: p.category.slug,
+          }
+        : null,
+      images: (p.images || []).map((img: any) => ({
+        id: img.id,
+        url: img.url,
+        altText: img.altText || '',
+        position: img.position,
+      })),
+    }));
 
         res.json({
             data,
@@ -287,9 +321,15 @@ app.get("/api/products/:slug", async (req: Request, res: Response) => {
     }
 });
 
-app.use("/auth", authRoutes);
-app.use("/wishlist", wishlistRoutes);
-app.use("/api/users", userRoutes);
+app.use('/auth', authRoutes);
+app.use('/wishlist', wishlistRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/payments', paymentRoutes);
+
+// Vendor Routes
+app.use('/api/vendor', vendorAuthRoutes);
+app.use('/api/vendor/dashboard', vendorDashboardRoutes);
+app.use("/api/vendor/products", productRoutes);
 
 // Start server
 app.listen(port, () => {

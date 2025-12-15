@@ -5,6 +5,8 @@ import orderRoutes from "./modules/orders/orders.routes";
 import orderHistoryRoutes from "./modules/order-history/order-history.routes";
 import wishlistRoutes from "./modules/wishlist/wishlist.routes";
 import notificationRoutes from "./modules/notifications/notifications.routes";
+import vendorAuthRoutes from "./modules/vendor-auth/vendor-auth.routes";
+import vendorDashboardRoutes from "./modules/vendor-dashboard/vendor-dashboard.routes";
 
 import dotenv from "dotenv";
 
@@ -14,8 +16,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// Customer Routes
 app.use("/api/auth", authRoutes);
+app.use('/auth', authRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/order-history", orderHistoryRoutes);
 app.use("/api/notifications", notificationRoutes);
@@ -26,12 +29,14 @@ console.log('Registering Auth Routes...');
 app.use('/auth', authRoutes);
 
 app.use("/wishlist", wishlistRoutes);
-app.use("/api/orders", orderRoutes);
 
-app.get('/', (req, res) => {
+// Vendor Routes
+app.use("/api/vendor/auth", vendorAuthRoutes);
+app.use("/api/vendor/dashboard", vendorDashboardRoutes);
+
+app.get('/', (_req, res) => {
   res.send('Sales Website Backend is running...');
 });
-
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>
