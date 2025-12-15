@@ -13,6 +13,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum NotificationStatus {
+  UNREAD
+  READ
+}
+
+model ProductCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  products  Product[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("product_categories")
+}
+
 model Product {
   id          Int             @id @default(autoincrement())
   name        String
@@ -20,34 +36,22 @@ model Product {
   summary     String?
   description String?
   price       Decimal         @db.Decimal(10, 2)
-  color       String?        
-  size        String?        
+  color       String?
+  size        String?
   style       String?
   currency    String          @default("USD")
   inStock     Boolean         @default(true) @map("in_stock")
   featured    Boolean         @default(false)
   status      String          @default("DRAFT")
-  category    ProductCategory @relation(fields: [categoryId], references: [id])
   categoryId  Int             @map("category_id")
+  category    ProductCategory @relation(fields: [categoryId], references: [id])
   images      ProductImage[]
   orderItems  OrderItem[]
   favoritedBy Favorite[]
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
-  orderItems  OrderItem[]
 
   @@map("products")
-}
-
-model ProductCategory {
-  id        Int       @id @default(autoincrement())
-  name      String
-  slug      String    @unique
-  products  Product[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-
-  @@map("product_categories")
 }
 
 model ProductImage {
@@ -55,24 +59,24 @@ model ProductImage {
   url       String
   altText   String?  @map("alt_text")
   position  Int      @default(0)
-  product   Product  @relation(fields: [productId], references: [id])
   productId Int      @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id])
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("product_images")
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String?
-  orders    Order[]
-  favoritedBy Favorite[]
+  id             Int                   @id @default(autoincrement())
+  email          String                @unique
+  password       String
+  name           String?
+  orders         Order[]
+  favoritedBy    Favorite[]
   passwordResets PasswordResetToken[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
+  notifications  Notification[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 
   @@map("users")
 }
@@ -83,102 +87,87 @@ model PasswordResetToken {
   token     String   @unique
   expiresAt DateTime @map("expires_at")
   used      Boolean  @default(false)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_tokens")
   @@index([token])
   @@index([userId])
 }
 
-model Order {
-  id        Int         @id @default(autoincrement())
-  userId    Int         @map("user_id")
-  date      DateTime    @default(now())
-  status    String
-  total     Float
-  items     OrderItem[]
-  user      User        @relation(fields: [userId], references: [id])
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
-
-  @@map("orders") 
-}
-
-model OrderItem {
-  id        Int      @id @default(autoincrement())
-  orderId   Int      @map("order_id")
-  productId Int      @map("product_id")
-  quantity  Int      @default(1)
-  price     Float
-  product   Product  @relation(fields: [productId], references: [id])
-  order     Order    @relation(fields: [orderId], references: [id])
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("order_items")
-}
 model Favorite {
-  user       User     @relation(fields: [userId], references: [id])
-  userId     Int      @map("user_id")
-  product    Product  @relation(fields: [productId], references: [id])
-  productId  Int      @map("product_id")
+  userId     Int     @map("user_id")
+  productId  Int     @map("product_id")
   assignedAt DateTime @default(now()) @map("assigned_at")
+  user       User    @relation(fields: [userId], references: [id])
+  product    Product @relation(fields: [productId], references: [id])
 
   @@id([userId, productId])
   @@map("favorites")
 }
+
 model Order {
-  id          Int    @id @default(autoincrement())
-  orderNumber String @unique // e.g., "TXNID983274"
-  userId      Int    @map("user_id")
-  user        User   @relation(fields: [userId], references: [id])
-
-  // Shipping Details
-  customerName    String
+  id             Int             @id @default(autoincrement())
+  orderNumber    String          @unique
+  userId         Int             @map("user_id")
+  user           User            @relation(fields: [userId], references: [id])
+  customerName   String
   shippingAddress String
-  trackingNumber  String?
-
-  // Financials
-  totalAmount Decimal @db.Decimal(10, 2)
-  status      String  @default("PROCESSING") // PENDING, SHIPPED, DELIVERED
-
-  // Relations
-  items    OrderItem[]
-  timeline OrderEvent[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  trackingNumber String?
+  totalAmount    Decimal         @db.Decimal(10, 2)
+  status         String          @default("PROCESSING")
+  items          OrderItem[]
+  timeline       OrderEvent[]
+  notifications  Notification[]
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
 
   @@map("orders")
 }
 
 model OrderItem {
-  id      Int   @id @default(autoincrement())
-  orderId Int   @map("order_id")
-  order   Order @relation(fields: [orderId], references: [id])
-
-  // Snapshot of product details at time of purchase
-  productId Int     @map("product_id")
-  product   Product @relation(fields: [productId], references: [id])
-
+  id         Int      @id @default(autoincrement())
+  orderId    Int      @map("order_id")
+  order      Order    @relation(fields: [orderId], references: [id])
+  productId  Int      @map("product_id")
+  product    Product  @relation(fields: [productId], references: [id])
   productName String
-  quantity    Int
-  price       Decimal @db.Decimal(10, 2)
-  color       String?
-  size        String?
-  image       String? // Snapshot of the image URL
+  quantity   Int
+  price      Decimal  @db.Decimal(10, 2)
+  color      String?
+  size       String?
+  image      String?
 
   @@map("order_items")
 }
 
 model OrderEvent {
-  id      Int   @id @default(autoincrement())
-  orderId Int   @map("order_id")
-  order   Order @relation(fields: [orderId], references: [id])
-
-  status      String // e.g., "Order Placed", "Shipped"
-  description String? // e.g., "Package arrived at Philadelphia facility"
-  timestamp   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  orderId   Int      @map("order_id")
+  order     Order    @relation(fields: [orderId], references: [id])
+  status    String
+  description String?
+  timestamp DateTime @default(now())
 
   @@map("order_events")
+}
+
+model Notification {
+  id         Int                 @id @default(autoincrement())
+  userId     Int                 @map("user_id")
+  orderId    Int?                @map("order_id")
+  title      String
+  message    String
+  imageUrl   String?
+  actionUrl  String?
+  status     NotificationStatus  @default(UNREAD)
+  createdAt  DateTime            @default(now()) @map("created_at")
+  readAt     DateTime?           @map("read_at")
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order      Order?              @relation(fields: [orderId], references: [id])
+
+  @@map("notifications")
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
 }

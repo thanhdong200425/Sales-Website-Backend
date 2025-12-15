@@ -1,8 +1,7 @@
-import { defineConfig, env } from "prisma/config";
-
-export default defineConfig({
-  datasource: {
-    url: env("DATABASE_URL"),
-  },
-});
-
+// Prisma configuration for Prisma 7+ (CommonJS for CLI compatibility)
+// Keep this file present per project requirements.
+module.exports = {
+    datasource: {
+        url: process.env.DATABASE_URL,
+    },
+};

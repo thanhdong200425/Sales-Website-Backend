@@ -4,7 +4,7 @@ import authRoutes from "./modules/auth/auth.routes";
 import orderRoutes from "./modules/orders/orders.routes";
 import orderHistoryRoutes from "./modules/order-history/order-history.routes";
 import wishlistRoutes from "./modules/wishlist/wishlist.routes";
-import orderRoutes from "./modules/orders/orders.routes";
+import notificationRoutes from "./modules/notifications/notifications.routes";
 
 import dotenv from "dotenv";
 
@@ -18,6 +18,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/order-history", orderHistoryRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/", (_req, res) => {
     res.send("Sales Website Backend is running...");
