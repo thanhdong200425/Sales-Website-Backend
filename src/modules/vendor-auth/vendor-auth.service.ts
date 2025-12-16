@@ -29,7 +29,7 @@ export const VendorAuthService = {
         contactName,
         phone,
         address,
-        status: "PENDING", // Vendors start as pending approval
+        status: "ACTIVE", // Vendors start as pending approval
       },
     });
 
@@ -67,7 +67,7 @@ export const VendorAuthService = {
     const token = jwt.sign(
       { vendorId: vendor.id, email: vendor.email, role: "vendor" },
       secret,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "8h" } as jwt.SignOptions
     );
 
     const { password: _, ...vendorWithoutPassword } = vendor;
@@ -103,4 +103,3 @@ export const VendorAuthService = {
     return vendorWithoutPassword;
   },
 };
-
