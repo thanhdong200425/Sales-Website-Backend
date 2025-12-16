@@ -9,6 +9,7 @@ import orderRoutes from "./src/modules/orders/orders.routes.js";
 import orderHistoryRoutes from "./src/modules/order-history/order-history.routes.js";
 import userRoutes from "./src/modules/user/user.routes.js";
 import paymentRoutes from "./src/modules/payments/payment.routes.js";
+import supportRoutes from "./src/modules/support/support.routes.js";
 import vendorAuthRoutes from "./src/modules/vendor-auth/vendor-auth.routes.js";
 import vendorDashboardRoutes from "./src/modules/vendor-dashboard/vendor-dashboard.routes.js";
 import vendorOrdersRoutes from "./src/modules/vendor-orders/vendor-orders.routes.js";
@@ -60,6 +61,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/auth", authRoutes);
 app.use("/wishlist", wishlistRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/support", supportRoutes);
 // PostgreSQL connection pool
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -112,7 +114,7 @@ app.get("/api/items", async (req: Request, res: Response) => {
 
     // Set Pagination
     const pageNumber = parseInt(page as string) || 1;
-    const pageSize = parseInt(limit as string) || 9; 
+    const pageSize = parseInt(limit as string) || 9;
     const skip = (pageNumber - 1) * pageSize;
 
     const whereClause: any = {
@@ -121,7 +123,7 @@ app.get("/api/items", async (req: Request, res: Response) => {
     };
 
     if (type) {
-      const searchKeyword = (type as string).replace(/s$/, ''); 
+      const searchKeyword = (type as string).replace(/s$/, '');
 
       whereClause.name = {
         contains: searchKeyword,
