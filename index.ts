@@ -13,6 +13,7 @@ import vendorAuthRoutes from "./src/modules/vendor-auth/vendor-auth.routes.js";
 import vendorDashboardRoutes from "./src/modules/vendor-dashboard/vendor-dashboard.routes.js";
 import vendorOrdersRoutes from "./src/modules/vendor-orders/vendor-orders.routes.js";
 import productRoutes from "./src/modules/products/product.routes";
+import notificationRoutes from "./src/modules/notifications/notifications.routes.js";
 dotenv.config();
 
 const app = express();
@@ -322,6 +323,7 @@ app.use("/wishlist", wishlistRoutes);
 app.use("/api/order-history", orderHistoryRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Vendor Routes
 app.use("/api/vendor/auth", vendorAuthRoutes);

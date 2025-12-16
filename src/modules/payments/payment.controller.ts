@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { vnpayService } from './vnpay.service';
 import { prisma } from '../../../prisma/prisma';
 import { JwtPayload } from 'jsonwebtoken';
+import { createNotification } from '../notifications/notifications.service';
 
 interface UserPayload extends JwtPayload {
   userId: number;
@@ -127,6 +128,15 @@ export const createPayment = async (req: Request, res: Response) => {
           items: true,
         },
       });
+
+      // Tạo thông báo cho user
+      await createNotification(
+        user.userId,
+        'order',
+        'Place an order',
+        order.id,
+        order.orderNumber
+      );
     }
 
     // Tạo orderId cho VNPay (format: ORDER_{orderId}_{timestamp})
@@ -193,7 +203,7 @@ export const vnpayReturn = async (req: Request, res: Response) => {
       // Cập nhật trạng thái đơn hàng
       if (vnpResponseCode === '00' && vnpTransactionStatus === '00') {
         // Thanh toán thành công
-        await prisma.order.update({
+        const updatedOrder = await prisma.order.update({
           where: { id: orderId },
           data: {
             status: 'PAID',
@@ -208,6 +218,15 @@ export const vnpayReturn = async (req: Request, res: Response) => {
             description: `Payment confirmed via VNPay. Transaction ID: ${vnpTransactionNo}`,
           },
         });
+
+        // Tạo thông báo cho user
+        await createNotification(
+          updatedOrder.userId,
+          'order',
+          'Order status changed to PAID',
+          updatedOrder.id,
+          updatedOrder.orderNumber
+        );
 
         return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment/success?orderId=${orderId}`);
       } else {
@@ -373,6 +392,15 @@ export const createCodOrder = async (req: Request, res: Response) => {
         items: true,
       },
     });
+
+    // Tạo thông báo cho user
+    await createNotification(
+      user.userId,
+      'order',
+      'Place an order',
+      order.id,
+      order.orderNumber
+    );
 
     res.status(200).json({
       success: true,

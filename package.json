@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "dev": "tsx watch index.ts",
     "dev:watch": "nodemon --exec node --loader ts-node/esm index.ts",
-    "seed": "node --loader ts-node/esm prisma/seed.ts"
+    "seed": "node --loader ts-node/esm prisma/seed-vendors.ts"
   },
   "keywords": [],
   "author": "",

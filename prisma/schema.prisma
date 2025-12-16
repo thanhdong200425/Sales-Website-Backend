@@ -74,6 +74,7 @@ model User {
   orders         Order[]
   favoritedBy    Favorite[]
   passwordResets PasswordResetToken[]
+  notifications  Notification[]
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   role           String               @default("user")
@@ -182,4 +183,23 @@ model OrderEvent {
   timestamp   DateTime @default(now())
 
   @@map("order_events")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+
+  type      String   @default("order") // order, message, alert
+  action    String   // e.g., "Order status changed", "Place an order"
+  orderId   Int?     @map("order_id")
+  orderNumber String? @map("order_number")
+  read      Boolean  @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([read])
+  @@map("notifications")
 }
