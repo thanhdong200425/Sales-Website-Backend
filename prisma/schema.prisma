@@ -37,7 +37,8 @@ model Product {
   favoritedBy Favorite[]
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
-
+  ownerId     Int      // <-- Cột lưu ID
+  owner       User     @relation("UserProducts", fields: [ownerId], references: [id]) // <-- Quan hệ
   @@map("products")
 }
 
@@ -75,8 +76,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   orders    Order[]
+  role      String   @default("user") 
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  products    Product[] @relation("UserProducts")
 
   @@map("users")
 }
