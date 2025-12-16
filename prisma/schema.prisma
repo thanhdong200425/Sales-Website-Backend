@@ -37,8 +37,9 @@ model Product {
   favoritedBy Favorite[]
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
-  ownerId     Int      // <-- Cột lưu ID
-  owner       User     @relation("UserProducts", fields: [ownerId], references: [id]) // <-- Quan hệ
+  ownerId     Int // <-- Cột lưu ID
+  owner       User            @relation("UserProducts", fields: [ownerId], references: [id]) // <-- Quan hệ
+
   @@map("products")
 }
 
@@ -66,20 +67,17 @@ model ProductImage {
 }
 
 model User {
-  id          Int        @id @default(autoincrement())
-  email       String     @unique
-  password    String
-  name        String?
-  orders      Order[]
-  favoritedBy Favorite[]
+  id             Int                  @id @default(autoincrement())
+  email          String               @unique
+  password       String
+  name           String?
+  orders         Order[]
+  favoritedBy    Favorite[]
   passwordResets PasswordResetToken[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
-  role      String   @default("user") 
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  products    Product[] @relation("UserProducts")
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  role           String               @default("user")
+  products       Product[]            @relation("UserProducts")
 
   @@map("users")
 }
@@ -93,12 +91,11 @@ model PasswordResetToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@map("password_reset_tokens")
   @@index([token])
   @@index([userId])
+  @@map("password_reset_tokens")
 }
 
-  @@map("orders") 
 model Vendor {
   id              Int       @id @default(autoincrement())
   email           String    @unique
@@ -108,10 +105,10 @@ model Vendor {
   phone           String?
   address         String?
   avatar          String?
-  averageRating   Decimal   @default(0) @db.Decimal(3, 2) @map("average_rating")
+  averageRating   Decimal   @default(0) @map("average_rating") @db.Decimal(3, 2)
   totalReviews    Int       @default(0) @map("total_reviews")
   responseTime    Int       @default(0) @map("response_time") // in minutes
-  fulfillmentRate Decimal   @default(0) @db.Decimal(5, 2) @map("fulfillment_rate")
+  fulfillmentRate Decimal   @default(0) @map("fulfillment_rate") @db.Decimal(5, 2)
   status          String    @default("ACTIVE") // ACTIVE, SUSPENDED, PENDING
   products        Product[]
   createdAt       DateTime  @default(now()) @map("created_at")

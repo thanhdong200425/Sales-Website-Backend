@@ -1,4 +1,4 @@
-import { prisma } from '../../../prisma/prisma';
+import { prisma } from "../../../prisma/prisma";
 
 /**
  * Get all orders for a specific user
@@ -15,39 +15,15 @@ export const getOrdersByUserId = async (userId: number) => {
         items: true,
         timeline: {
           orderBy: {
-            timestamp: 'asc',
+            timestamp: "asc",
           },
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
-    // Transform data to match Frontend UI requirements
-    return orders.map((order) => {
-      // Format date like "August 24, 2024"
-      const formattedDate = new Intl.DateTimeFormat('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      }).format(new Date(order.date));
-
-      return {
-        id: order.id,
-        date: formattedDate,
-        status: order.status,
-        total: `$${order.total.toFixed(2)}`,
-        items: order.items.map((item) => ({
-          id: item.id,
-          name: item.product.name,
-          quantity: item.quantity,
-          price: `$${item.price.toFixed(2)}`,
-          image: item.product.images[0]?.url || '',
-          productId: item.productId,
-        })),
-      };
-    });
     // Transform data to match frontend API expectations
     return orders.map((order) => ({
       id: order.id,
@@ -78,8 +54,8 @@ export const getOrdersByUserId = async (userId: number) => {
       updatedAt: order.updatedAt.toISOString(),
     }));
   } catch (error) {
-    console.error('Error in getOrdersByUserId:', error);
-    throw new Error('Could not fetch orders');
+    console.error("Error in getOrdersByUserId:", error);
+    throw new Error("Could not fetch orders");
   }
 };
 
@@ -100,7 +76,7 @@ export const getOrderById = async (orderId: number, userId: number) => {
         items: true,
         timeline: {
           orderBy: {
-            timestamp: 'asc',
+            timestamp: "asc",
           },
         },
       },
@@ -122,10 +98,6 @@ export const getOrderById = async (orderId: number, userId: number) => {
       status: order.status,
       items: order.items.map((item) => ({
         id: item.id,
-        name: item.product.name,
-        quantity: item.quantity,
-        price: `$${item.price.toFixed(2)}`,
-        image: item.product.images[0]?.url || '',
         productId: item.productId,
         productName: item.productName,
         quantity: item.quantity,
@@ -144,8 +116,8 @@ export const getOrderById = async (orderId: number, userId: number) => {
       updatedAt: order.updatedAt.toISOString(),
     };
   } catch (error) {
-    console.error('Error in getOrderById:', error);
-    throw new Error('Could not fetch order details');
+    console.error("Error in getOrderById:", error);
+    throw new Error("Could not fetch order details");
   }
 };
 
@@ -154,7 +126,7 @@ export const getOrderById = async (orderId: number, userId: number) => {
  * @param orderNumber - The order number
  * @returns Order with items and timeline
  */
-export const createOrder = async (data: any) => {
+export const createOrder = async (_data: any) => {
   // Logic to create order would go here
   return { message: "Order creation not implemented yet" };
 };
