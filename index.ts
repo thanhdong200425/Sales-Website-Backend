@@ -12,6 +12,7 @@ import paymentRoutes from "./src/modules/payments/payment.routes.js";
 import vendorAuthRoutes from "./src/modules/vendor-auth/vendor-auth.routes.js";
 import vendorDashboardRoutes from "./src/modules/vendor-dashboard/vendor-dashboard.routes.js";
 import vendorOrdersRoutes from "./src/modules/vendor-orders/vendor-orders.routes.js";
+import productRoutes from "./src/modules/products/product.routes";
 dotenv.config();
 
 const app = express();
@@ -59,7 +60,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/auth", authRoutes);
 app.use("/wishlist", wishlistRoutes);
 app.use("/api/orders", orderRoutes);
-
 // PostgreSQL connection pool
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -112,7 +112,7 @@ app.get("/api/items", async (req: Request, res: Response) => {
 
     // Set Pagination
     const pageNumber = parseInt(page as string) || 1;
-    const pageSize = parseInt(limit as string) || 9; // Mặc định 9 sản phẩm/trang (cho đẹp grid 3x3)
+    const pageSize = parseInt(limit as string) || 9; 
     const skip = (pageNumber - 1) * pageSize;
 
     const whereClause: any = {
@@ -121,7 +121,7 @@ app.get("/api/items", async (req: Request, res: Response) => {
     };
 
     if (type) {
-      const searchKeyword = (type as string).replace(/s$/, ""); // Bỏ chữ 's' số nhiều nếu có
+      const searchKeyword = (type as string).replace(/s$/, ''); 
 
       whereClause.name = {
         contains: searchKeyword,
@@ -327,6 +327,8 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/vendor/auth", vendorAuthRoutes);
 app.use("/api/vendor/dashboard", vendorDashboardRoutes);
 app.use("/api/vendor/orders", vendorOrdersRoutes);
+app.use('/api/vendor', vendorAuthRoutes);
+app.use("/api/vendor/products", productRoutes);
 
 // Start server
 app.listen(port, () => {

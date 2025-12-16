@@ -49,4 +49,4 @@ export const vendorAuthMiddleware = (
     });
   }
 };
-
+export default vendorAuthMiddleware;
