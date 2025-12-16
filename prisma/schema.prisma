@@ -72,6 +72,10 @@ model User {
   name        String?
   orders      Order[]
   favoritedBy Favorite[]
+  passwordResets PasswordResetToken[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
   role      String   @default("user") 
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -80,6 +84,21 @@ model User {
   @@map("users")
 }
 
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("password_reset_tokens")
+  @@index([token])
+  @@index([userId])
+}
+
+  @@map("orders") 
 model Vendor {
   id              Int       @id @default(autoincrement())
   email           String    @unique

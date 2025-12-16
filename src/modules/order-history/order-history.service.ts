@@ -73,7 +73,7 @@ export const getOrderHistoryByUserId = async (userId: number): Promise<OrderHist
           name: item.product.name,
           quantity: item.quantity,
           price: `$${item.price.toFixed(2)}`,
-          image: item.product.images[0]?.url || 'https://placehold.co/120x120/F0EEED/1A1A1A?text=No+Image',
+          image: item.product.images[0]?.url || '',
           productId: item.productId,
         })),
       };
@@ -154,7 +154,7 @@ export const getOrderHistoryDetail = async (orderId: number, userId: number): Pr
         name: item.product.name,
         quantity: item.quantity,
         price: `$${item.price.toFixed(2)}`,
-        image: item.product.images[0]?.url || 'https://placehold.co/120x120/F0EEED/1A1A1A?text=No+Image',
+        image: item.product.images[0]?.url || '',
         productId: item.productId,
       })),
     };

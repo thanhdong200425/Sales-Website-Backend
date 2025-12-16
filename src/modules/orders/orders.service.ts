@@ -24,6 +24,30 @@ export const getOrdersByUserId = async (userId: number) => {
       },
     });
 
+    // Transform data to match Frontend UI requirements
+    return orders.map((order) => {
+      // Format date like "August 24, 2024"
+      const formattedDate = new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      }).format(new Date(order.date));
+
+      return {
+        id: order.id,
+        date: formattedDate,
+        status: order.status,
+        total: `$${order.total.toFixed(2)}`,
+        items: order.items.map((item) => ({
+          id: item.id,
+          name: item.product.name,
+          quantity: item.quantity,
+          price: `$${item.price.toFixed(2)}`,
+          image: item.product.images[0]?.url || '',
+          productId: item.productId,
+        })),
+      };
+    });
     // Transform data to match frontend API expectations
     return orders.map((order) => ({
       id: order.id,
@@ -98,6 +122,10 @@ export const getOrderById = async (orderId: number, userId: number) => {
       status: order.status,
       items: order.items.map((item) => ({
         id: item.id,
+        name: item.product.name,
+        quantity: item.quantity,
+        price: `$${item.price.toFixed(2)}`,
+        image: item.product.images[0]?.url || '',
         productId: item.productId,
         productName: item.productName,
         quantity: item.quantity,
@@ -122,8 +150,9 @@ export const getOrderById = async (orderId: number, userId: number) => {
 };
 
 /**
- * Create a new order
- * @param data - Order data
+ * Get order by order number
+ * @param orderNumber - The order number
+ * @returns Order with items and timeline
  */
 export const createOrder = async (data: any) => {
   // Logic to create order would go here
