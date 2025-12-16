@@ -276,7 +276,6 @@ app.get('/api/products/featured', async (_req: Request, res: Response) => {
   }
 });
 
-// Get detail product by ID
 app.get('/api/products/id/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
