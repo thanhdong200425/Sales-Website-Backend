@@ -15,6 +15,22 @@ import vendorOrdersRoutes from './src/modules/vendor-orders/vendor-orders.routes
 import productRoutes from './src/modules/products/product.routes';
 import reviewRoutes from './src/modules/reviews/review.routes.js';
 
+import dotenv from "dotenv";
+import express, { Request, Response } from "express";
+import { Pool } from "pg";
+import cors from "cors";
+import { prisma } from "./prisma/prisma.js";
+import authRoutes from "./src/modules/auth/auth.routes.js";
+import wishlistRoutes from "./src/modules/wishlist/wishlist.routes.js";
+import orderRoutes from "./src/modules/orders/orders.routes.js";
+import orderHistoryRoutes from "./src/modules/order-history/order-history.routes.js";
+import userRoutes from "./src/modules/user/user.routes.js";
+import paymentRoutes from "./src/modules/payments/payment.routes.js";
+import supportRoutes from "./src/modules/support/support.routes.js";
+import vendorAuthRoutes from "./src/modules/vendor-auth/vendor-auth.routes.js";
+import vendorDashboardRoutes from "./src/modules/vendor-dashboard/vendor-dashboard.routes.js";
+import vendorOrdersRoutes from "./src/modules/vendor-orders/vendor-orders.routes.js";
+import productRoutes from "./src/modules/products/product.routes";
 dotenv.config();
 
 const app = express();
@@ -62,6 +78,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/auth', authRoutes);
 app.use('/wishlist', wishlistRoutes);
 app.use('/api/orders', orderRoutes);
+app.use("/api/support", supportRoutes);
 // PostgreSQL connection pool
 const pool = new Pool({
   host: process.env.DB_HOST,
