@@ -19,7 +19,6 @@ export const createProduct = async (
   userId?: number
 ) => {
   const slug = data.name.toLowerCase().replace(/ /g, "-") + "-" + Date.now();
-
   let categoryId = Number(data.categoryId);
   if (!categoryId) {
     const firstCategory = await prisma.productCategory.findFirst();

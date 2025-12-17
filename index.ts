@@ -9,11 +9,14 @@ import orderRoutes from "./src/modules/orders/orders.routes.js";
 import orderHistoryRoutes from "./src/modules/order-history/order-history.routes.js";
 import userRoutes from "./src/modules/user/user.routes.js";
 import paymentRoutes from "./src/modules/payments/payment.routes.js";
+import supportRoutes from "./src/modules/support/support.routes.js";
 import vendorAuthRoutes from "./src/modules/vendor-auth/vendor-auth.routes.js";
 import vendorDashboardRoutes from "./src/modules/vendor-dashboard/vendor-dashboard.routes.js";
 import vendorOrdersRoutes from "./src/modules/vendor-orders/vendor-orders.routes.js";
 import productRoutes from "./src/modules/products/product.routes";
+import reviewRoutes from "./src/modules/reviews/review.routes.js";
 import notificationRoutes from "./src/modules/notifications/notifications.routes.js";
+
 dotenv.config();
 
 const app = express();
@@ -57,10 +60,6 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Feature routes
-app.use("/auth", authRoutes);
-app.use("/wishlist", wishlistRoutes);
-app.use("/api/orders", orderRoutes);
 // PostgreSQL connection pool
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -113,7 +112,7 @@ app.get("/api/items", async (req: Request, res: Response) => {
 
     // Set Pagination
     const pageNumber = parseInt(page as string) || 1;
-    const pageSize = parseInt(limit as string) || 9; 
+    const pageSize = parseInt(limit as string) || 9;
     const skip = (pageNumber - 1) * pageSize;
 
     const whereClause: any = {
@@ -122,7 +121,7 @@ app.get("/api/items", async (req: Request, res: Response) => {
     };
 
     if (type) {
-      const searchKeyword = (type as string).replace(/s$/, ''); 
+      const searchKeyword = (type as string).replace(/s$/, "");
 
       whereClause.name = {
         contains: searchKeyword,
@@ -278,7 +277,53 @@ app.get("/api/products/featured", async (_req: Request, res: Response) => {
     });
   }
 });
-// Get detail product by name
+
+app.get("/api/products/id/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const productId = Number(id);
+
+    if (isNaN(productId)) {
+      res.status(400).json({ error: "Invalid product ID" });
+      return;
+    }
+
+    const product = await prisma.product.findUnique({
+      where: {
+        id: productId,
+      },
+      include: {
+        category: true,
+        images: {
+          orderBy: {
+            position: "asc",
+          },
+        },
+      },
+    });
+
+    if (!product) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+
+    if (product.status !== "published") {
+      res.status(404).json({ error: "Product is not available" });
+      return;
+    }
+
+    res.json(product);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    res.status(500).json({
+      error: "Failed to fetch product detail",
+      message: errorMessage,
+    });
+  }
+});
+
+// Get detail product by slug
 app.get("/api/products/:slug", async (req: Request, res: Response) => {
   try {
     const { slug } = req.params;
@@ -318,19 +363,33 @@ app.get("/api/products/:slug", async (req: Request, res: Response) => {
   }
 });
 
+// Authentication routes
 app.use("/auth", authRoutes);
+
+// User routes
 app.use("/wishlist", wishlistRoutes);
-app.use("/api/order-history", orderHistoryRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/payments", paymentRoutes);
 app.use("/api/notifications", notificationRoutes);
 
-// Vendor Routes
+// Order routes
+app.use("/api/orders", orderRoutes);
+app.use("/api/order-history", orderHistoryRoutes);
+
+// Payment routes
+app.use("/api/payments", paymentRoutes);
+
+// Support routes
+app.use("/api/support", supportRoutes);
+
+// Vendor routes
 app.use("/api/vendor/auth", vendorAuthRoutes);
+app.use("/api/vendor", vendorAuthRoutes);
 app.use("/api/vendor/dashboard", vendorDashboardRoutes);
 app.use("/api/vendor/orders", vendorOrdersRoutes);
-app.use('/api/vendor', vendorAuthRoutes);
 app.use("/api/vendor/products", productRoutes);
+
+// Review routes
+app.use("/api/reviews", reviewRoutes);
 
 // Start server
 app.listen(port, () => {
