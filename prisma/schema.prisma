@@ -126,6 +126,7 @@ model Vendor {
   fulfillmentRate Decimal                    @default(0) @map("fulfillment_rate") @db.Decimal(5, 2)
   status          String                     @default("ACTIVE") // ACTIVE, SUSPENDED, PENDING
   products        Product[]
+  orderItems      OrderItem[]
   passwordResets  VendorPasswordResetToken[]
   createdAt       DateTime                   @default(now()) @map("created_at")
   updatedAt       DateTime                   @updatedAt @map("updated_at")
@@ -178,12 +179,17 @@ model OrderItem {
   productId Int     @map("product_id")
   product   Product @relation(fields: [productId], references: [id])
 
+  // Vendor relationship
+  vendorId Int?    @map("vendor_id")
+  vendor   Vendor? @relation(fields: [vendorId], references: [id])
+
   productName String
   quantity    Int
   price       Decimal @db.Decimal(10, 2)
   color       String?
   size        String?
   image       String? // Snapshot of the image URL
+  status      String  @default("PROCESSING") // PROCESSING, SHIPPED, DELIVERED, CANCELLED
 
   @@map("order_items")
 }

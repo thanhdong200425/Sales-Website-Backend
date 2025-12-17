@@ -99,6 +99,7 @@ export const createPayment = async (req: Request, res: Response) => {
           color: item.color || product.color,
           size: item.size || product.size,
           image: product.images[0]?.url || null,
+          vendorId: product.vendorId,
         });
       }
 
@@ -363,6 +364,7 @@ export const createCodOrder = async (req: Request, res: Response) => {
         color: item.color || product.color,
         size: item.size || product.size,
         image: product.images[0]?.url || null,
+        vendorId: product.vendorId,
       });
     }
 
