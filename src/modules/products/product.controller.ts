@@ -120,4 +120,33 @@ export class ProductController {
       return res.status(500).json({ message: "Failed to update product" });
     }
   }
+static async getPublicProducts(req: Request, res: Response) {
+    try {
+        const { q, category, min, max, stock, sort, page, limit, color, style, rating } = req.query;
+        const parseNumber = (val: any) => {
+            if (!val || val === 'undefined' || val === 'null') return undefined;
+            const num = Number(val);
+            return isNaN(num) ? undefined : num;
+        };
+
+        const result = await productService.getPublicProducts({
+            search: (q && q !== 'undefined') ? String(q) : undefined,
+            categoryId: category ? String(category) : undefined,
+            minPrice: parseNumber(min),
+            maxPrice: parseNumber(max),
+            page: parseNumber(page) || 1,
+            limit: parseNumber(limit) || 12,
+            inStock: stock === 'true',
+            sortBy: (sort && sort !== 'undefined') ? String(sort) : undefined,
+            color: (color && color !== 'undefined') ? String(color) : undefined,
+            style: (style && style !== 'undefined') ? String(style) : undefined,
+            rating: rating ? Number(rating) : undefined,
+        });
+
+        return res.json(result);
+    } catch (error) {
+        console.error("Public search error:", error); 
+        return res.status(500).json({ message: "Error fetching products" });
+    }
+}
 }

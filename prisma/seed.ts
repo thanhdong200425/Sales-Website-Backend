@@ -5,83 +5,61 @@ import "dotenv/config";
 const prisma = new PrismaClient();
 
 const categorySeeds = [
-  { name: "Clothing", slug: "clothing" },
-  { name: "Shoes", slug: "shoes" },
-  { name: "Accessories", slug: "accessories" },
+  { name: "T-shirts", slug: "t-shirts" },
+  { name: "Shorts", slug: "shorts" },
+  { name: "Shirts", slug: "shirts" },
+  { name: "Hoodie", slug: "hoodie" },
+  { name: "Jeans", slug: "jeans" },
 ];
 
-const styleAdjectives = [
-  "Classic",
-  "Modern",
-  "Urban",
-  "Minimal",
-  "Essential",
-  "Premium",
-  "Casual",
-  "Active",
-  "Heritage",
-  "Elevated",
+const adjectives = [
+  "Urban", "Classic", "Vintage", "Modern", "Essential",
+  "Premium", "Streetwear", "Cozy", "Slim-fit", "Oversized",
+  "Heavyweight", "Lightweight", "Athletic", "Retro", "Minimalist"
+];
+
+const materials = [
+  "Cotton", "Denim", "Linen", "Fleece", "Wool", "Polyester"
 ];
 
 const colors = [
-  "#00C12B", // Green
-  "#F50606", // Red
-  "#F5DD06", // Yellow
-  "#F57906", // Orange
-  "#06CAF5", // Blue
-  "#063AF5", // Dark Blue
-  "#7D06F5", // Purple
-  "#F506A4", // Pink
-  "#FFFFFF", // White
-  "#000000"  // Black
+  { name: "Green", code: "#00C12B" },
+  { name: "Red", code: "#F50606" },
+  { name: "Yellow", code: "#F5DD06" },
+  { name: "Orange", code: "#F57906" },
+  { name: "Blue", code: "#06CAF5" },
+  { name: "Dark Blue", code: "#063AF5" },
+  { name: "Purple", code: "#7D06F5" },
+  { name: "Pink", code: "#F506A4" },
+  { name: "White", code: "#FFFFFF" },
+  { name: "Black", code: "#000000" },
 ];
 
 const sizes = [
   "XX-Small", "X-Small", "Small", "Medium",
-  "Large", "X-Large", "XX-Large", "3X-Large", "4X-Large"
+  "Large", "X-Large", "XX-Large", "3X-Large"
 ];
 
 const styles = [
   "Casual", "Formal", "Party", "Gym"
 ];
 
-const productTypes = [
-  "Tee",
-  "Hoodie",
-  "Denim Jacket",
-  "Chino",
-  "Windbreaker",
-  "Sneaker",
-  "Boot",
-  "Loafer",
-  "Sport Sandal",
-  "Crossbody Bag",
-  "Duffel",
-  "Cap",
-  "Scarf",
-  "Wool Coat",
-  "Crewneck",
-];
-
 const imagePool = [
-  "https://images.unsplash.com/photo-1475180098004-ca77a66827be",
-  "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb",
-  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-  "https://images.unsplash.com/photo-1441986300917-64674bd600d8",
-  "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
   "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab",
-  "https://images.unsplash.com/photo-1523381210434-271e8be1f52b",
-  "https://images.unsplash.com/photo-1576566588028-4147f3842f27",
-  "https://images.unsplash.com/photo-1551028919-ac66e6a39d7e",
-  "https://images.unsplash.com/photo-1591047139829-d91aecb6caea",
-  "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
-  "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa",
-  "https://images.unsplash.com/photo-1549298916-b41d501d3772",
-  "https://images.unsplash.com/photo-1552346154-21d32810aba3",
-  "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a",
   "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a",
-  "https://images.unsplash.com/photo-1578932750294-f5075e85f44a",
-  "https://images.unsplash.com/photo-1550614000-4b9519e092a9",
+  "https://images.unsplash.com/photo-1576566588028-4147f3842f27",
+  "https://images.unsplash.com/photo-1591047139829-d91aecb6caea",
+  "https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a",
+  "https://images.unsplash.com/photo-1604176354204-9268737828fa",
+  "https://images.unsplash.com/photo-1618354691373-d851c5c3a990",
+  "https://images.unsplash.com/photo-1596755094514-f87e34085b2c",
+  "https://images.unsplash.com/photo-1620799140408-ed5341cd2431",
+  "https://images.unsplash.com/photo-1617137968427-85924c800a22",
+  "https://images.unsplash.com/photo-1551028919-ac66e6a39d7e",
+  "https://images.unsplash.com/photo-1591195853828-11db59a44f6b",
+  "https://images.unsplash.com/photo-1562157873-818bc0726f68",
+  "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c",
+  "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f",
 ];
 
 const descriptions = [
@@ -90,10 +68,12 @@ const descriptions = [
   "Features subtle detailing and a relaxed fit for effortless style.",
   "Lightweight construction with reinforced seams for lasting wear.",
   "Inspired by streetwear classics and updated with modern tailoring.",
+  "A wardrobe staple that combines durability with a soft touch.",
+  "Perfect for any season, offering breathable comfort and style.",
 ];
 
 const currency = "USD";
-const PRODUCT_COUNT = 100;
+const PRODUCT_COUNT = 200;
 
 const slugify = (value: string) =>
   value
@@ -106,13 +86,21 @@ const randomFrom = <T>(items: T[]): T =>
 
 const randomPrice = () => Number(Math.floor(Math.random() * 120) + 30).toFixed(2);
 
-const buildImages = (startIndex: number) => {
+const randomRating = () => Number((Math.random() * 2 + 3).toFixed(1));
+
+const buildImages = (startIndex: number, productName: string) => {
   const count = Math.floor(Math.random() * 3) + 1; // 1-3 images
   return Array.from({ length: count }).map((_, idx) => {
     const poolIndex = (startIndex + idx) % imagePool.length;
+    let url = imagePool[poolIndex];
+    
+    if (url.includes("unsplash")) {
+        url = `${url}?auto=format&fit=crop&w=600&q=80`;
+    }
+
     return {
-      url: `${imagePool[poolIndex]}?auto=format&fit=crop&w=1200&q=80`,
-      altText: "Lifestyle product photo",
+      url: url,
+      altText: `${productName} view ${idx + 1}`,
       position: idx,
     };
   });
@@ -133,13 +121,11 @@ async function getOrCreateAdmin() {
     },
   });
 
-  console.info(`Admin user ready: ID ${user.id}`);
   return user;
 }
 
 async function main() {
   console.info("Seeding categories, products and admin user...");
-
   await prisma.favorite.deleteMany();
   await prisma.productImage.deleteMany();
   await prisma.product.deleteMany();
@@ -147,46 +133,57 @@ async function main() {
 
   const adminUser = await getOrCreateAdmin();
 
-  const categories = await Promise.all(
+  const createdCategories = await Promise.all(
     categorySeeds.map((category) =>
       prisma.productCategory.create({ data: category })
     )
   );
 
-  console.info("Seeding products...");
+  console.info(`Seeding ${PRODUCT_COUNT} products...`);
 
   const productPromises = Array.from({ length: PRODUCT_COUNT }).map(
     async (_, index) => {
-      const adjective = randomFrom(styleAdjectives);
-      const type = randomFrom(productTypes);
-      const name = `${adjective} ${type}`;
-      const slug = `${slugify(name)}-${index + 1}`;
-      const category = categories[index % categories.length];
+      const category = index % createdCategories.length;
+      const selectedCategory = createdCategories[category];
+      
+      const adj = randomFrom(adjectives);
+      const mat = randomFrom(materials);
+      
+      let typeName = selectedCategory.name;
+      if (typeName === "T-shirts") typeName = "T-shirt";
+      if (typeName === "Shirts") typeName = "Shirt";
+      
+      const name = `${adj} ${mat} ${typeName}`;
+      const slug = `${slugify(name)}-${index + 1000}`;
+
+      const selectedColor = randomFrom(colors);
 
       return prisma.product.create({
         data: {
           name,
           slug,
           summary: randomFrom(descriptions),
-          description: `${randomFrom(descriptions)} ${randomFrom(
-            descriptions
-          )}`,
+          description: `${randomFrom(descriptions)} ${randomFrom(descriptions)}`,
           price: randomPrice(),
           currency,
           inStock: Math.random() > 0.1,
+          stockLevel: Math.floor(Math.random() * 100),
+          soldCount: Math.floor(Math.random() * 500),
+          averageRating: randomRating(),
+          totalReviews: Math.floor(Math.random() * 50) + 1,
           featured: Math.random() > 0.7,
           status: "published",
           category: {
-            connect: { id: category.id }
+            connect: { id: selectedCategory.id }
           },
           owner: {
             connect: { id: adminUser.id }
           },
-          color: randomFrom(colors),
+          color: selectedColor.code,
           size: randomFrom(sizes),
           style: randomFrom(styles),
           images: {
-            create: buildImages(index),
+            create: buildImages(index, name),
           },
         },
       });
@@ -194,10 +191,8 @@ async function main() {
   );
 
   await Promise.all(productPromises);
-
-  console.info(`Seeded ${PRODUCT_COUNT} products successfully.`);
-
-  await seedUser();
+  console.info(`Seeded successfully! Ready to test Search & Filter.`);
+await seedUser();
 }
 
 async function seedUser() {

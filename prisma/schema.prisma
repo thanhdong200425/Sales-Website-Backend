@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
@@ -14,20 +15,24 @@ datasource db {
 }
 
 model Product {
-  id          Int              @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
-  slug        String           @unique
+  slug        String   @unique
   summary     String?
   description String?
-  price       Decimal          @db.Decimal(10, 2)
+  price       Decimal  @db.Decimal(10, 2)
   color       String?
   size        String?
   style       String?
-  currency    String           @default("USD")
-  inStock     Boolean          @default(true) @map("in_stock")
-  featured    Boolean          @default(false)
-  status      String           @default("DRAFT")
-  stockLevel  Int              @default(0) @map("stock_level")
+  currency    String   @default("USD")
+  inStock     Boolean  @default(true) @map("in_stock")
+  featured    Boolean  @default(false)
+  status      String   @default("DRAFT")
+  stockLevel  Int      @default(0) @map("stock_level")
+
+  soldCount     Int     @default(0) @map("sold_count")     
+  averageRating Decimal @default(0) @db.Decimal(3, 2) @map("average_rating") 
+  totalReviews  Int     @default(0) @map("total_reviews")   
   category    ProductCategory? @relation(fields: [categoryId], references: [id])
   categoryId  Int?             @map("category_id")
   vendor      Vendor?          @relation(fields: [vendorId], references: [id])
@@ -36,14 +41,14 @@ model Product {
   orderItems  OrderItem[]
   favoritedBy Favorite[]
   reviews     Review[]
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
-  ownerId     Int? // <-- Made optional for vendor products
-  owner       User?            @relation("UserProducts", fields: [ownerId], references: [id]) // <-- Made optional
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  ownerId     Int? 
+  owner       User?    @relation("UserProducts", fields: [ownerId], references: [id])
 
   @@map("products")
 }
-
 model ProductCategory {
   id        Int       @id @default(autoincrement())
   name      String
