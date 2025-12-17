@@ -1,86 +1,61 @@
-import { prisma } from '../../../prisma/prisma';
-
-// Interface for the frontend-friendly response structure
-export interface OrderHistoryItem {
-  id: number;
-  date: string;
-  status: string;
-  total: string;
-  items: {
-    id: number;
-    name: string;
-    quantity: number;
-    price: string;
-    image: string;
-    productId: number;
-  }[];
-}
-
-export interface OrderDetailResponse extends OrderHistoryItem {
-  orderNumber: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { prisma } from "../../../prisma/prisma";
 
 /**
  * Get all orders for a specific user
  * @param userId - The ID of the user
- * @returns Array of order history items
+ * @returns Array of orders with items and timeline
  */
-export const getOrdersByUserId = async (userId: number): Promise<OrderHistoryItem[]> => {
+export const getOrdersByUserId = async (userId: number) => {
   try {
     const orders = await prisma.order.findMany({
       where: {
         userId: userId,
       },
       include: {
-        items: {
-          include: {
-            product: {
-              include: {
-                images: {
-                  orderBy: {
-                    position: 'asc',
-                  },
-                  take: 1,
-                },
-              },
-            },
+        items: true,
+        timeline: {
+          orderBy: {
+            timestamp: "asc",
           },
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
-    // Transform data to match Frontend UI requirements
-    return orders.map((order) => {
-      // Format date like "August 24, 2024"
-      const formattedDate = new Intl.DateTimeFormat('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      }).format(new Date(order.date));
-
-      return {
-        id: order.id,
-        date: formattedDate,
-        status: order.status,
-        total: `$${order.total.toFixed(2)}`,
-        items: order.items.map((item) => ({
-          id: item.id,
-          name: item.product.name,
-          quantity: item.quantity,
-          price: `$${item.price.toFixed(2)}`,
-          image: item.product.images[0]?.url || 'https://placehold.co/120x120/F0EEED/1A1A1A?text=No+Image',
-          productId: item.productId,
-        })),
-      };
-    });
+    // Transform data to match frontend API expectations
+    return orders.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      userId: order.userId,
+      customerName: order.customerName,
+      shippingAddress: order.shippingAddress,
+      trackingNumber: order.trackingNumber,
+      totalAmount: order.totalAmount.toString(),
+      status: order.status,
+      items: order.items.map((item) => ({
+        id: item.id,
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        price: item.price.toString(),
+        color: item.color,
+        size: item.size,
+        image: item.image,
+      })),
+      timeline: order.timeline.map((event) => ({
+        id: event.id,
+        status: event.status,
+        description: event.description,
+        createdAt: event.timestamp.toISOString(),
+      })),
+      createdAt: order.createdAt.toISOString(),
+      updatedAt: order.updatedAt.toISOString(),
+    }));
   } catch (error) {
-    console.error('Error in getOrdersByUserId:', error);
-    throw new Error('Could not fetch orders');
+    console.error("Error in getOrdersByUserId:", error);
+    throw new Error("Could not fetch orders");
   }
 };
 
@@ -90,7 +65,7 @@ export const getOrdersByUserId = async (userId: number): Promise<OrderHistoryIte
  * @param userId - The ID of the user (for security check)
  * @returns Order detail or null if not found
  */
-export const getOrderById = async (orderId: number, userId: number): Promise<OrderDetailResponse | null> => {
+export const getOrderById = async (orderId: number, userId: number) => {
   try {
     const order = await prisma.order.findFirst({
       where: {
@@ -98,17 +73,10 @@ export const getOrderById = async (orderId: number, userId: number): Promise<Ord
         userId: userId, // Ensure user can only access their own orders
       },
       include: {
-        items: {
-          include: {
-            product: {
-              include: {
-                images: {
-                  orderBy: {
-                    position: 'asc',
-                  },
-                },
-              },
-            },
+        items: true,
+        timeline: {
+          orderBy: {
+            timestamp: "asc",
           },
         },
       },
@@ -118,57 +86,47 @@ export const getOrderById = async (orderId: number, userId: number): Promise<Ord
       return null;
     }
 
-    // Format dates
-    const formattedDate = new Intl.DateTimeFormat('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(new Date(order.date));
-
-    const formattedCreatedAt = new Intl.DateTimeFormat('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(order.createdAt));
-
-    const formattedUpdatedAt = new Intl.DateTimeFormat('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(order.updatedAt));
-
+    // Transform to match frontend API expectations
     return {
       id: order.id,
-      orderNumber: `ORD-${order.id.toString().padStart(6, '0')}`,
-      date: formattedDate,
+      orderNumber: order.orderNumber,
+      userId: order.userId,
+      customerName: order.customerName,
+      shippingAddress: order.shippingAddress,
+      trackingNumber: order.trackingNumber,
+      totalAmount: order.totalAmount.toString(),
       status: order.status,
-      total: `$${order.total.toFixed(2)}`,
-      createdAt: formattedCreatedAt,
-      updatedAt: formattedUpdatedAt,
       items: order.items.map((item) => ({
         id: item.id,
-        name: item.product.name,
-        quantity: item.quantity,
-        price: `$${item.price.toFixed(2)}`,
-        image: item.product.images[0]?.url || 'https://placehold.co/120x120/F0EEED/1A1A1A?text=No+Image',
         productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        price: item.price.toString(),
+        color: item.color,
+        size: item.size,
+        image: item.image,
       })),
+      timeline: order.timeline.map((event) => ({
+        id: event.id,
+        status: event.status,
+        description: event.description,
+        createdAt: event.timestamp.toISOString(),
+      })),
+      createdAt: order.createdAt.toISOString(),
+      updatedAt: order.updatedAt.toISOString(),
     };
   } catch (error) {
-    console.error('Error in getOrderById:', error);
-    throw new Error('Could not fetch order details');
+    console.error("Error in getOrderById:", error);
+    throw new Error("Could not fetch order details");
   }
 };
 
 /**
- * Create a new order
- * @param data - Order data
+ * Get order by order number
+ * @param orderNumber - The order number
+ * @returns Order with items and timeline
  */
-export const createOrder = async (data: any) => {
+export const createOrder = async (_data: any) => {
   // Logic to create order would go here
   return { message: "Order creation not implemented yet" };
 };
@@ -205,6 +163,7 @@ export const createTestOrder = async () => {
   return await prisma.order.create({
     data: {
       orderNumber: `TXN-${Date.now()}`,
+      userId: 1, // Default test user
       customerName: "Rusan Royal",
       shippingAddress: "4567 Elm Street, Apt 3B, Philadelphia, PA",
       totalAmount: 888000,

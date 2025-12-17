@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { vnpayService } from './vnpay.service';
 import { prisma } from '../../../prisma/prisma';
 import { JwtPayload } from 'jsonwebtoken';
+import { createNotification } from '../notifications/notifications.service';
 
 interface UserPayload extends JwtPayload {
   userId: number;
@@ -98,6 +99,7 @@ export const createPayment = async (req: Request, res: Response) => {
           color: item.color || product.color,
           size: item.size || product.size,
           image: product.images[0]?.url || null,
+          vendorId: product.vendorId,
         });
       }
 
@@ -127,6 +129,15 @@ export const createPayment = async (req: Request, res: Response) => {
           items: true,
         },
       });
+
+      // Tạo thông báo cho user
+      await createNotification(
+        user.userId,
+        'order',
+        'Place an order',
+        order.id,
+        order.orderNumber
+      );
     }
 
     // Tạo orderId cho VNPay (format: ORDER_{orderId}_{timestamp})
@@ -193,7 +204,7 @@ export const vnpayReturn = async (req: Request, res: Response) => {
       // Cập nhật trạng thái đơn hàng
       if (vnpResponseCode === '00' && vnpTransactionStatus === '00') {
         // Thanh toán thành công
-        await prisma.order.update({
+        const updatedOrder = await prisma.order.update({
           where: { id: orderId },
           data: {
             status: 'PAID',
@@ -208,6 +219,15 @@ export const vnpayReturn = async (req: Request, res: Response) => {
             description: `Payment confirmed via VNPay. Transaction ID: ${vnpTransactionNo}`,
           },
         });
+
+        // Tạo thông báo cho user
+        await createNotification(
+          updatedOrder.userId,
+          'order',
+          'Order status changed to PAID',
+          updatedOrder.id,
+          updatedOrder.orderNumber
+        );
 
         return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment/success?orderId=${orderId}`);
       } else {
@@ -282,6 +302,125 @@ export const vnpayIpn = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error in vnpayIpn:', error);
     res.status(200).json({ RspCode: '99', Message: 'Unknown error' });
+  }
+};
+
+/**
+ * Tạo đơn hàng với phương thức thanh toán COD
+ * POST /api/payments/create-cod
+ * Body: { items: Array, shippingInfo: { customerName, phone, address } }
+ */
+export const createCodOrder = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as UserPayload;
+    const { items, shippingInfo } = req.body;
+
+    if (!user || !user.userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized',
+      });
+    }
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cart items are required',
+      });
+    }
+
+    if (!shippingInfo || !shippingInfo.customerName || !shippingInfo.address) {
+      return res.status(400).json({
+        success: false,
+        message: 'Shipping information is required',
+      });
+    }
+
+    // Tính tổng tiền
+    let totalAmount = 0;
+    const orderItems = [];
+
+    for (const item of items) {
+      const product = await prisma.product.findUnique({
+        where: { id: item.productId },
+        include: { images: { orderBy: { position: 'asc' }, take: 1 } },
+      });
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: `Product with ID ${item.productId} not found`,
+        });
+      }
+
+      const itemPrice = Number(product.price) * item.quantity;
+      totalAmount += itemPrice;
+
+      orderItems.push({
+        productId: product.id,
+        productName: product.name,
+        quantity: item.quantity,
+        price: product.price,
+        color: item.color || product.color,
+        size: item.size || product.size,
+        image: product.images[0]?.url || null,
+        vendorId: product.vendorId,
+      });
+    }
+
+    // Tạo order number
+    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+
+    // Tạo order với trạng thái PENDING (chờ giao hàng và thanh toán)
+    const order = await prisma.order.create({
+      data: {
+        orderNumber,
+        userId: user.userId,
+        customerName: shippingInfo.customerName,
+        shippingAddress: shippingInfo.address,
+        totalAmount: totalAmount,
+        status: 'PENDING',
+        items: {
+          create: orderItems,
+        },
+        timeline: {
+          create: {
+            status: 'Order Placed',
+            description: 'Order created with Cash on Delivery payment method',
+          },
+        },
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    // Tạo thông báo cho user
+    await createNotification(
+      user.userId,
+      'order',
+      'Place an order',
+      order.id,
+      order.orderNumber
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Order created successfully',
+      data: {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        amount: Number(order.totalAmount),
+        status: order.status,
+      },
+    });
+  } catch (error) {
+    console.error('Error in createCodOrder:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create order',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 };
 
