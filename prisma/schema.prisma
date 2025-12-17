@@ -97,23 +97,38 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
+model VendorPasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  vendorId  Int      @map("vendor_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([token])
+  @@index([vendorId])
+  @@map("vendor_password_reset_tokens")
+}
+
 model Vendor {
-  id              Int       @id @default(autoincrement())
-  email           String    @unique
+  id              Int                         @id @default(autoincrement())
+  email           String                      @unique
   password        String
-  businessName    String    @map("business_name")
-  contactName     String?   @map("contact_name")
+  businessName    String                      @map("business_name")
+  contactName     String?                     @map("contact_name")
   phone           String?
   address         String?
   avatar          String?
-  averageRating   Decimal   @default(0) @map("average_rating") @db.Decimal(3, 2)
-  totalReviews    Int       @default(0) @map("total_reviews")
-  responseTime    Int       @default(0) @map("response_time") // in minutes
-  fulfillmentRate Decimal   @default(0) @map("fulfillment_rate") @db.Decimal(5, 2)
-  status          String    @default("ACTIVE") // ACTIVE, SUSPENDED, PENDING
+  averageRating   Decimal                     @default(0) @map("average_rating") @db.Decimal(3, 2)
+  totalReviews    Int                         @default(0) @map("total_reviews")
+  responseTime    Int                         @default(0) @map("response_time") // in minutes
+  fulfillmentRate Decimal                     @default(0) @map("fulfillment_rate") @db.Decimal(5, 2)
+  status          String                      @default("ACTIVE") // ACTIVE, SUSPENDED, PENDING
   products        Product[]
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  passwordResets  VendorPasswordResetToken[]
+  createdAt       DateTime                    @default(now()) @map("created_at")
+  updatedAt       DateTime                    @updatedAt @map("updated_at")
 
   @@map("vendors")
 }

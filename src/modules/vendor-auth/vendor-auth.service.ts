@@ -1,6 +1,8 @@
 import { prisma } from "../../../prisma/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import { EmailService } from "../../services/emailService";
 
 export const VendorAuthService = {
   async register(
@@ -101,5 +103,65 @@ export const VendorAuthService = {
 
     const { password: _, ...vendorWithoutPassword } = vendor;
     return vendorWithoutPassword;
+  },
+
+  async forgotPassword(email: string) {
+    const vendor = await prisma.vendor.findUnique({ where: { email } });
+
+    if (!vendor) {
+      return { message: "If the email exists, a password reset link has been sent." };
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await prisma.vendorPasswordResetToken.create({
+      data: {
+        vendorId: vendor.id,
+        token: resetToken,
+        expiresAt,
+      },
+    });
+
+    await EmailService.sendPasswordResetEmail(email, resetToken);
+
+    return {
+      message: "If the email exists, a password reset link has been sent.",
+      token: resetToken,
+    };
+  },
+
+  async resetPassword(token: string, newPassword: string) {
+    const resetToken = await prisma.vendorPasswordResetToken.findUnique({
+      where: { token },
+      include: { vendor: true },
+    });
+
+    if (!resetToken) {
+      throw new Error("Invalid or expired reset token");
+    }
+
+    if (resetToken.used) {
+      throw new Error("Reset token has already been used");
+    }
+
+    if (new Date() > resetToken.expiresAt) {
+      throw new Error("Reset token has expired");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.$transaction([
+      prisma.vendor.update({
+        where: { id: resetToken.vendorId },
+        data: { password: hashedPassword },
+      }),
+      prisma.vendorPasswordResetToken.update({
+        where: { id: resetToken.id },
+        data: { used: true },
+      }),
+    ]);
+
+    return { message: "Password reset successfully" };
   },
 };

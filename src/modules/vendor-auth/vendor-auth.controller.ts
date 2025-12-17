@@ -122,5 +122,67 @@ export class VendorAuthController {
       });
     }
   }
+
+  // FORGOT PASSWORD
+  static async forgotPassword(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is required",
+        });
+      }
+
+      const data = await VendorAuthService.forgotPassword(email);
+
+      return res.status(200).json({
+        success: true,
+        message: data.message,
+        token: data.token,
+      });
+    } catch (error: any) {
+      console.error("Vendor Forgot Password Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
+  // RESET PASSWORD
+  static async resetPassword(req: Request, res: Response) {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Token and new password are required",
+        });
+      }
+
+      const data = await VendorAuthService.resetPassword(token, newPassword);
+
+      return res.status(200).json({
+        success: true,
+        message: data.message,
+      });
+    } catch (error: any) {
+      console.error("Vendor Reset Password Error:", error);
+
+      const isTokenError =
+        error.message === "Invalid or expired reset token" ||
+        error.message === "Reset token has already been used" ||
+        error.message === "Reset token has expired";
+      const statusCode = isTokenError ? 400 : 500;
+
+      return res.status(statusCode).json({
+        success: false,
+        message: statusCode === 500 ? "Internal server error" : error.message,
+      });
+    }
+  }
 }
 
