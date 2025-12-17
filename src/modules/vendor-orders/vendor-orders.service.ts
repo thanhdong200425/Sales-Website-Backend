@@ -453,4 +453,215 @@ export const VendorOrdersService = {
       totalPages: Math.ceil(total / limit),
     };
   },
+
+  // Get single order detail for vendor
+  async getOrderDetail(vendorId: number, orderId: number) {
+    // Get vendor's products
+    const products = await prisma.product.findMany({
+      where: { vendorId },
+      select: { id: true },
+    });
+
+    const productIds = products.map((p) => p.id);
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        user: true,
+        items: {
+          where: {
+            productId: { in: productIds },
+          },
+          include: {
+            product: {
+              include: {
+                images: {
+                  take: 1,
+                  orderBy: { position: "asc" },
+                },
+              },
+            },
+          },
+        },
+        timeline: {
+          orderBy: {
+            timestamp: "asc",
+          },
+        },
+      },
+    });
+
+    if (!order || order.items.length === 0) {
+      return null;
+    }
+
+    const vendorItemsTotal = order.items.reduce(
+      (sum, item) => sum + Number(item.price) * item.quantity,
+      0
+    );
+
+    return {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      customerEmail: order.user.email,
+      shippingAddress: order.shippingAddress,
+      trackingNumber: order.trackingNumber,
+      status: order.status,
+      totalAmount: vendorItemsTotal,
+      items: order.items.map((item) => ({
+        id: item.id,
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        price: Number(item.price),
+        color: item.color,
+        size: item.size,
+        image: item.image || item.product.images[0]?.url || null,
+        status: item.status,
+      })),
+      timeline: order.timeline.map((event) => ({
+        id: event.id,
+        status: event.status,
+        description: event.description,
+        timestamp: event.timestamp.toISOString(),
+      })),
+      createdAt: order.createdAt.toISOString(),
+      updatedAt: order.updatedAt.toISOString(),
+    };
+  },
+
+  // Update order item status
+  async updateOrderItemStatus(
+    vendorId: number,
+    orderItemId: number,
+    status: string,
+    trackingNumber?: string
+  ) {
+    // Verify the order item belongs to vendor's product
+    const orderItem = await prisma.orderItem.findUnique({
+      where: { id: orderItemId },
+      include: {
+        product: true,
+        order: true,
+      },
+    });
+
+    if (!orderItem || orderItem.product.vendorId !== vendorId) {
+      throw new Error("Order item not found or unauthorized");
+    }
+
+    // Update order item status
+    const updatedItem = await prisma.orderItem.update({
+      where: { id: orderItemId },
+      data: {
+        status: status.toUpperCase(),
+      },
+    });
+
+    // Update order tracking number if provided
+    if (trackingNumber && orderItem.order) {
+      await prisma.order.update({
+        where: { id: orderItem.orderId },
+        data: { trackingNumber },
+      });
+    }
+
+    // Create order event
+    let eventDescription = "";
+    switch (status.toUpperCase()) {
+      case "PROCESSING":
+        eventDescription = `Order item "${orderItem.productName}" is being processed`;
+        break;
+      case "SHIPPED":
+        eventDescription = `Order item "${orderItem.productName}" has been shipped${trackingNumber ? ` with tracking number ${trackingNumber}` : ""}`;
+        break;
+      case "DELIVERED":
+        eventDescription = `Order item "${orderItem.productName}" has been delivered`;
+        break;
+      case "CANCELLED":
+        eventDescription = `Order item "${orderItem.productName}" has been cancelled`;
+        break;
+      default:
+        eventDescription = `Order item "${orderItem.productName}" status updated to ${status}`;
+    }
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: orderItem.orderId,
+        status: status.toUpperCase(),
+        description: eventDescription,
+      },
+    });
+
+    // Check if all items in the order have the same status, update order status
+    const allItems = await prisma.orderItem.findMany({
+      where: { orderId: orderItem.orderId },
+    });
+
+    const allStatuses = allItems.map((item) => item.status);
+    const uniqueStatuses = [...new Set(allStatuses)];
+
+    if (uniqueStatuses.length === 1) {
+      await prisma.order.update({
+        where: { id: orderItem.orderId },
+        data: { status: uniqueStatuses[0] },
+      });
+    } else if (allStatuses.every((s) => s === "SHIPPED" || s === "DELIVERED")) {
+      await prisma.order.update({
+        where: { id: orderItem.orderId },
+        data: { status: "SHIPPED" },
+      });
+    }
+
+    return updatedItem;
+  },
+
+  // Get order statistics for vendor
+  async getOrderStats(vendorId: number) {
+    const products = await prisma.product.findMany({
+      where: { vendorId },
+      select: { id: true },
+    });
+
+    const productIds = products.map((p) => p.id);
+
+    if (productIds.length === 0) {
+      return {
+        totalOrders: 0,
+        processing: 0,
+        shipped: 0,
+        delivered: 0,
+        cancelled: 0,
+      };
+    }
+
+    // Get orders with vendor's products
+    const orders = await prisma.orderItem.findMany({
+      where: {
+        productId: { in: productIds },
+      },
+      include: {
+        order: true,
+      },
+    });
+
+    const stats = {
+      totalOrders: orders.length,
+      processing: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0,
+    };
+
+    orders.forEach((item) => {
+      const status = item.status.toLowerCase();
+      if (status === "processing") stats.processing++;
+      else if (status === "shipped") stats.shipped++;
+      else if (status === "delivered") stats.delivered++;
+      else if (status === "cancelled") stats.cancelled++;
+    });
+
+    return stats;
+  },
 };

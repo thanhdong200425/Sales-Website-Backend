@@ -1,14 +1,17 @@
-import { Request, Response } from 'express';
-import { ReviewService } from './review.service';
+import { Request, Response } from "express";
+import { ReviewService } from "./review.service";
 
 export class ReviewController {
   static async createReview(req: Request, res: Response) {
     try {
       const { productId } = req.params;
-      const { rating, comment, userId } = req.body;
+      const { rating, comment } = req.body;
+
+      // Get userId from authenticated user
+      const userId = req.user?.id || req.user?.userId;
 
       if (!userId) {
-        return res.status(400).json({ message: 'userId is required' });
+        return res.status(401).json({ message: "Authentication required" });
       }
 
       const numericRating = Number(rating);
@@ -16,10 +19,10 @@ export class ReviewController {
       const numericUserId = Number(userId);
 
       if (Number.isNaN(numericProductId)) {
-        return res.status(400).json({ message: 'Invalid productId' });
+        return res.status(400).json({ message: "Invalid productId" });
       }
       if (Number.isNaN(numericUserId)) {
-        return res.status(400).json({ message: 'Invalid userId' });
+        return res.status(400).json({ message: "Invalid userId" });
       }
 
       const review = await ReviewService.createOrUpdateReview(
@@ -30,23 +33,25 @@ export class ReviewController {
       );
 
       return res.status(200).json({
-        message: 'Review saved successfully',
+        message: "Review saved successfully",
         data: review,
       });
     } catch (error: any) {
-      console.error('Create review error:', error);
+      console.error("Create review error:", error);
 
-      if (error.message === 'INVALID_RATING') {
-        return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+      if (error.message === "INVALID_RATING") {
+        return res
+          .status(400)
+          .json({ message: "Rating must be between 1 and 5" });
       }
 
-      if (error.message === 'NOT_PURCHASED') {
+      if (error.message === "NOT_PURCHASED") {
         return res.status(400).json({
-          message: 'You can only review products you have purchased',
+          message: "You can only review products you have purchased",
         });
       }
 
-      return res.status(500).json({ message: 'Failed to save review' });
+      return res.status(500).json({ message: "Failed to save review" });
     }
   }
 
@@ -57,15 +62,15 @@ export class ReviewController {
       const numericProductId = Number(productId);
 
       if (Number.isNaN(numericProductId)) {
-        return res.status(400).json({ message: 'Invalid productId' });
+        return res.status(400).json({ message: "Invalid productId" });
       }
 
       const result = await ReviewService.getReviewsForProduct(numericProductId);
 
       return res.status(200).json(result);
     } catch (error) {
-      console.error('Get product reviews error:', error);
-      return res.status(500).json({ message: 'Failed to fetch reviews' });
+      console.error("Get product reviews error:", error);
+      return res.status(500).json({ message: "Failed to fetch reviews" });
     }
   }
 }

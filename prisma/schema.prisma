@@ -14,32 +14,32 @@ datasource db {
 }
 
 model Product {
-  id          Int             @id @default(autoincrement())
+  id          Int              @id @default(autoincrement())
   name        String
-  slug        String          @unique
+  slug        String           @unique
   summary     String?
   description String?
-  price       Decimal         @db.Decimal(10, 2)
+  price       Decimal          @db.Decimal(10, 2)
   color       String?
   size        String?
   style       String?
-  currency    String          @default("USD")
-  inStock     Boolean         @default(true) @map("in_stock")
-  featured    Boolean         @default(false)
-  status      String          @default("DRAFT")
-  stockLevel  Int             @default(0) @map("stock_level")
-  category    ProductCategory @relation(fields: [categoryId], references: [id])
-  categoryId  Int             @map("category_id")
-  vendor      Vendor?         @relation(fields: [vendorId], references: [id])
-  vendorId    Int?            @map("vendor_id")
+  currency    String           @default("USD")
+  inStock     Boolean          @default(true) @map("in_stock")
+  featured    Boolean          @default(false)
+  status      String           @default("DRAFT")
+  stockLevel  Int              @default(0) @map("stock_level")
+  category    ProductCategory? @relation(fields: [categoryId], references: [id])
+  categoryId  Int?             @map("category_id")
+  vendor      Vendor?          @relation(fields: [vendorId], references: [id])
+  vendorId    Int?             @map("vendor_id")
   images      ProductImage[]
   orderItems  OrderItem[]
   favoritedBy Favorite[]
   reviews     Review[]
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
-  ownerId     Int // <-- Cột lưu ID
-  owner       User            @relation("UserProducts", fields: [ownerId], references: [id]) // <-- Quan hệ
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  ownerId     Int? // <-- Made optional for vendor products
+  owner       User?            @relation("UserProducts", fields: [ownerId], references: [id]) // <-- Made optional
 
   @@map("products")
 }
@@ -75,6 +75,7 @@ model User {
   orders         Order[]
   favoritedBy    Favorite[]
   passwordResets PasswordResetToken[]
+  notifications  Notification[]
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   role           String               @default("user")
@@ -98,23 +99,39 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
+model VendorPasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  vendorId  Int      @map("vendor_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([token])
+  @@index([vendorId])
+  @@map("vendor_password_reset_tokens")
+}
+
 model Vendor {
-  id              Int       @id @default(autoincrement())
-  email           String    @unique
+  id              Int                        @id @default(autoincrement())
+  email           String                     @unique
   password        String
-  businessName    String    @map("business_name")
-  contactName     String?   @map("contact_name")
+  businessName    String                     @map("business_name")
+  contactName     String?                    @map("contact_name")
   phone           String?
   address         String?
   avatar          String?
-  averageRating   Decimal   @default(0) @map("average_rating") @db.Decimal(3, 2)
-  totalReviews    Int       @default(0) @map("total_reviews")
-  responseTime    Int       @default(0) @map("response_time") // in minutes
-  fulfillmentRate Decimal   @default(0) @map("fulfillment_rate") @db.Decimal(5, 2)
-  status          String    @default("ACTIVE") // ACTIVE, SUSPENDED, PENDING
+  averageRating   Decimal                    @default(0) @map("average_rating") @db.Decimal(3, 2)
+  totalReviews    Int                        @default(0) @map("total_reviews")
+  responseTime    Int                        @default(0) @map("response_time") // in minutes
+  fulfillmentRate Decimal                    @default(0) @map("fulfillment_rate") @db.Decimal(5, 2)
+  status          String                     @default("ACTIVE") // ACTIVE, SUSPENDED, PENDING
   products        Product[]
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  orderItems      OrderItem[]
+  passwordResets  VendorPasswordResetToken[]
+  createdAt       DateTime                   @default(now()) @map("created_at")
+  updatedAt       DateTime                   @updatedAt @map("updated_at")
 
   @@map("vendors")
 }
@@ -164,12 +181,17 @@ model OrderItem {
   productId Int     @map("product_id")
   product   Product @relation(fields: [productId], references: [id])
 
+  // Vendor relationship
+  vendorId Int?    @map("vendor_id")
+  vendor   Vendor? @relation(fields: [vendorId], references: [id])
+
   productName String
   quantity    Int
   price       Decimal @db.Decimal(10, 2)
   color       String?
   size        String?
   image       String? // Snapshot of the image URL
+  status      String  @default("PROCESSING") // PROCESSING, SHIPPED, DELIVERED, CANCELLED
 
   @@map("order_items")
 }
@@ -184,6 +206,25 @@ model OrderEvent {
   timestamp   DateTime @default(now())
 
   @@map("order_events")
+}
+
+model Notification {
+  id     Int  @id @default(autoincrement())
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id])
+
+  type        String  @default("order") // order, message, alert
+  action      String // e.g., "Order status changed", "Place an order"
+  orderId     Int?    @map("order_id")
+  orderNumber String? @map("order_number")
+  read        Boolean @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([read])
+  @@map("notifications")
 }
 
 model Review {

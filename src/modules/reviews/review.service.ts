@@ -13,7 +13,7 @@ export const ReviewService = {
       throw new Error('INVALID_RATING');
     }
 
-    // Ensure user has purchased this product and order has been shipped
+    // Ensure user has purchased this product and order has been delivered
     const hasPurchased = await db.order.findFirst({
       where: {
         userId,
@@ -22,11 +22,7 @@ export const ReviewService = {
             productId,
           },
         },
-        timeline: {
-          some: {
-            status: 'Shipped',
-          },
-        },
+        status: 'DELIVERED',
       },
       select: { id: true },
     });

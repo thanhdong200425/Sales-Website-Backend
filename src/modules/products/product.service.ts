@@ -1,16 +1,24 @@
-import { prisma } from '../../../prisma/prisma';
+import { prisma } from "../../../prisma/prisma";
 
-export const getMyProducts = async (ownerId: number) => {
+export const getMyProducts = async (vendorId: number) => {
   return await prisma.product.findMany({
-    where: { ownerId: Number(ownerId) },
-    include: { category: true, images: true },
-    orderBy: { createdAt: 'desc' },
+    where: { vendorId: Number(vendorId) },
+    include: {
+      category: true,
+      images: {
+        orderBy: { position: "asc" },
+      },
+    },
+    orderBy: { createdAt: "desc" },
   });
 };
 
-export const createProduct = async (data: any, ownerId: number, vendorId?: number) => {
-  const slug = data.name.toLowerCase().replace(/ /g, '-') + '-' + Date.now();
-
+export const createProduct = async (
+  data: any,
+  vendorId?: number,
+  userId?: number
+) => {
+  const slug = data.name.toLowerCase().replace(/ /g, "-") + "-" + Date.now();
   let categoryId = Number(data.categoryId);
   if (!categoryId) {
     const firstCategory = await prisma.productCategory.findFirst();
@@ -18,7 +26,7 @@ export const createProduct = async (data: any, ownerId: number, vendorId?: numbe
       ? firstCategory.id
       : (
           await prisma.productCategory.create({
-            data: { name: 'General', slug: `general-${Date.now()}` },
+            data: { name: "General", slug: `general-${Date.now()}` },
           })
         ).id;
   }
@@ -28,19 +36,19 @@ export const createProduct = async (data: any, ownerId: number, vendorId?: numbe
       name: data.name,
       slug: slug,
       price: Number(data.price),
-      description: data.description || '',
-      summary: data.summary || 'No summary provided',
+      description: data.description || "",
+      summary: data.summary || "No summary provided",
       inStock: Number(data.stockLevel) > 0,
       stockLevel: Number(data.stockLevel) || 0,
-      status: 'published',
+      status: "published",
       featured: false,
-      currency: 'USD',
-      color: data.color || '#000000',
-      size: data.size || 'Medium',
-      style: data.style || 'Casual',
+      currency: "USD",
+      color: data.color || "#000000",
+      size: data.size || "Medium",
+      style: data.style || "Casual",
       categoryId: categoryId,
-      ownerId: Number(ownerId),
       ...(vendorId && { vendorId: Number(vendorId) }),
+      ...(userId && { ownerId: Number(userId) }),
       images: {
         create: data.imageUrl
           ? [
@@ -56,17 +64,24 @@ export const createProduct = async (data: any, ownerId: number, vendorId?: numbe
   });
 };
 
-export const deleteProduct = async (productId: number, ownerId: number) => {
+export const deleteProduct = async (productId: number, vendorId: number) => {
   return await prisma.product.deleteMany({
-    where: { id: Number(productId), ownerId: Number(ownerId) },
+    where: {
+      id: Number(productId),
+      vendorId: Number(vendorId),
+    },
   });
 };
 
-export const updateProduct = async (id: number, data: any, ownerId: number) => {
+export const updateProduct = async (
+  id: number,
+  data: any,
+  vendorId: number
+) => {
   return await prisma.product.update({
     where: {
       id: id,
-      ownerId: ownerId,
+      vendorId: vendorId,
     },
     data: {
       name: data.name,
@@ -87,9 +102,12 @@ export const updateProduct = async (id: number, data: any, ownerId: number) => {
   });
 };
 
-export const getProductById = async (id: number, ownerId: number) => {
+export const getProductById = async (id: number, vendorId: number) => {
   return await prisma.product.findFirst({
-    where: { id: id, ownerId: ownerId },
+    where: {
+      id: id,
+      vendorId: vendorId,
+    },
     include: { images: true },
   });
 };
