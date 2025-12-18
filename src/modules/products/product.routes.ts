@@ -9,5 +9,5 @@ router.post("/", vendorAuthMiddleware, ProductController.createProduct);
 router.delete("/:id", vendorAuthMiddleware, ProductController.deleteProduct);
 router.get("/:id", vendorAuthMiddleware, ProductController.getProductDetail); 
 router.put("/:id", vendorAuthMiddleware, ProductController.updateProduct);    
-
+router.get("/public/search", ProductController.getPublicProducts);
 export default router;
